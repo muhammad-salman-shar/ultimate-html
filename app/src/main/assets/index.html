@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PhotoPDF lite</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#080b14;
@@ -489,6 +488,8 @@
   </div>
 </div>
 
+<!-- jsPDF loaded at end so body renders instantly -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script>
 /* ================= Elements ================= */
 const els = {
@@ -527,7 +528,7 @@ const state = {
 };
 
 /* ================= Helpers ================= */
-const tick = () => new Promise(r => setTimeout(r, 0));
+const tick = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function fmt(b){
   if (b == null) return '–';
@@ -768,7 +769,7 @@ async function compressAll(){
 
   const target = getTargetBytes();
   setBusy(true);
-  setStatus('Compressing... please wait ⏳');
+  setStatus('Compressing... Please wait up to 1 minute for best results. Do not close the app.', '');
   setProgress(0);
 
   clearImageOutputs();
@@ -828,11 +829,11 @@ function renderResults(){
     sz.className = 'r-size';
     sz.innerHTML = `${fmt(c.originalSize)} → <b>${fmt(c.size)}</b>`;
 
-    const dl = document.createElement('a');
+    const dl = document.createElement('button');
     dl.className = 'r-dl';
-    dl.href = c.url;
-    dl.download = `compressed_${c.name.replace(/\.[^/.]+$/, '')}.jpg`;
-    dl.innerHTML = '⬇️ Download';
+    dl.type = 'button';
+    dl.onclick = () => openSheet();
+    dl.innerHTML = 'Download';
 
     body.append(nm, sz, dl);
     item.append(im, body);
@@ -846,7 +847,7 @@ async function makePDF(){
   if (!state.photos.length){ setStatus('Please add photos first 🙂', 'err'); return; }
 
   setBusy(true);
-  setStatus('Creating PDF... 📄');
+  setStatus('Creating PDF... Please wait up to 1 minute for best results. Do not close the app.', '');
   setProgress(0);
   await tick();
 
@@ -986,6 +987,9 @@ function updateSheetInfo(){
 }
 
 function openSheet(){
+  if (!state.pdfBlob && state.compressed.length > 0){
+    sheet.ext.value = 'jpg';
+  }
   if (!state.pdfBlob && !state.compressed.length && !state.photos.length){
     setStatus('Please add photos first 🙂', 'err');
     return;
