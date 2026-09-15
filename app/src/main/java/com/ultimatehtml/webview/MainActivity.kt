@@ -5,8 +5,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import android.util.Log
+import android.webkit.ConsoleMessage
 import android.webkit.WebChromeClient
+import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
@@ -23,6 +26,8 @@ class MainActivity : AppCompatActivity() {
     companion object {
         private const val TAG = "MainActivity"
         private const val REQUEST_PERMISSIONS = 100
+        private const val REQUEST_FILE_PICK = 101
+        private const val REQUEST_CAMERA_PHOTO = 102
         
         // Callbacks for async operations
         var filePickerCallback: ((List<Uri>) -> Unit)? = null
