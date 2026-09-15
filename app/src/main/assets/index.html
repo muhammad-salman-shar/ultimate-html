@@ -1,76 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Native HTML App</title>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; color: #333; }
-        .container { max-width: 800px; margin: 0 auto; }
-        header { text-align: center; color: white; margin-bottom: 30px; }
-        header h1 { font-size: 2em; margin-bottom: 10px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
-        .card { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .card h2 { color: #667eea; margin-bottom: 15px; font-size: 1.3em; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
-        .button-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
-        button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; transition: transform 0.2s; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
-        button:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
-        button.secondary { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
-        button.success { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
-        button.warning { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
-        .result-box { background: #f8f9fa; border: 1px solid #e9ecef; border-radius: 8px; padding: 15px; margin-top: 15px; font-family: monospace; font-size: 13px; max-height: 200px; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
-        .result-box.error { background: #fff5f5; border-color: #fc8181; color: #c53030; }
-        .result-box.success { background: #f0fff4; border-color: #68d391; color: #276749; }
-        .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
-        .info-row:last-child { border-bottom: none; }
-        .info-label { color: #666; font-weight: 500; }
-        .info-value { color: #333; font-weight: 600; }
-        .status-indicator { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 8px; }
-        .status-online { background: #48bb78; }
-        .status-offline { background: #f56565; }
-        #log { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.9); color: #00ff00; padding: 10px; font-family: monospace; font-size: 12px; max-height: 150px; overflow-y: auto; display: none; z-index: 1000; }
-        #log.show { display: block; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ultimate HTML</title>
+<style>
+  body { font-family: sans-serif; background: #f4f6f8; margin: 0; padding: 20px; }
+  h1 { color: #1565C0; }
+  .ok { background: #e8f5e9; padding: 12px; border-radius: 8px; color: #2e7d32; }
+</style>
 </head>
 <body>
-    <div class="container">
-        <header><h1>Native HTML App</h1><p>Android WebView with Native Bridge</p></header>
-        <div class="card"><h2>Device Information</h2><div id="deviceInfo"><p>Loading...</p></div><div style="margin-top:15px"><button onclick="refreshDeviceInfo()">Refresh</button><button class="secondary" onclick="toggleFullscreen()">Fullscreen</button><button class="warning" onclick="toggleScreenAwake()">Keep Awake</button></div></div>
-        <div class="card"><h2>Network Status</h2><div id="networkStatus"><p>Loading...</p></div><div style="margin-top:15px"><button onclick="checkNetwork()">Check</button></div></div>
-        <div class="card"><h2>File Operations</h2><div class="button-grid"><button onclick="pickFile()">Pick File</button><button onclick="pickMultipleFiles()">Pick Multiple</button><button class="success" onclick="saveTestFile()">Save Test File</button><button onclick="downloadFile()">Download</button></div><div id="fileResult" class="result-box" style="display:none"></div></div>
-        <div class="card"><h2>Sharing</h2><div class="button-grid"><button onclick="shareText()">Share Text</button><button onclick="copyToClipboard()">Copy</button><button onclick="getFromClipboard()">Get Clipboard</button></div><div id="clipboardResult" class="result-box" style="display:none"></div></div>
-        <div class="card"><h2>Notifications</h2><div class="button-grid"><button onclick="showNotification()">Notify</button><button class="secondary" onclick="vibrateDevice()">Vibrate</button></div></div>
-        <div class="card"><h2>External Apps</h2><div class="button-grid"><button onclick="openBrowser()">Browser</button><button onclick="openDialer()">Dialer</button><button onclick="openEmail()">Email</button><button class="warning" onclick="openSettings()">Settings</button></div></div>
-        <div class="card"><h2>Camera & Location</h2><div class="button-grid"><button onclick="takePhoto()">Take Photo</button><button onclick="getLocation()">Location</button></div><div id="cameraResult" class="result-box" style="display:none"></div></div>
-        <div class="card"><h2>Battery</h2><div id="batteryInfo"><p>Loading...</p></div></div>
-    </div>
-    <div id="log"></div>
-    <script>
-        function createCallback(fn){if(!window.__createCallback){setTimeout(()=>fn(null),0);return null}return window.__createCallback(fn)}
-        function log(m,e){const l=document.getElementById('log');l.innerHTML+='['+new Date().toLocaleTimeString()+'] '+m+'\n';l.scrollTop=l.scrollHeight;l.classList.add('show')}
-        function showResult(id,d,e){const el=document.getElementById(id);el.style.display='block';el.className='result-box'+(e?' error':' success');el.textContent=typeof d==='object'?JSON.stringify(d,null,2):d}
-        function refreshDeviceInfo(){const cb=createCallback(r=>{if(r&&r.success){document.getElementById('deviceInfo').innerHTML='<div class="info-row"><span class="info-label">Model:</span><span class="info-value">'+r.model+'</span></div><div class="info-row"><span class="info-label">Manufacturer:</span><span class="info-value">'+r.manufacturer+'</span></div><div class="info-row"><span class="info-label">Android:</span><span class="info-value">'+r.androidVersion+' (SDK '+r.sdkVersion+')</span></div><div class="info-row"><span class="info-label">Screen:</span><span class="info-value">'+r.screenWidth+' x '+r.screenHeight+'</span></div>'}});if(cb)Android.getDeviceInfo(cb)}
-        function toggleFullscreen(){const f=document.fullscreenElement!==null;const cb=createCallback(r=>{if(r&&r.success)log('Fullscreen: '+r.fullscreen)});if(cb)Android.setFullscreen(!f,cb)}
-        function toggleScreenAwake(){const b=event.target,a=b.classList.contains('active');const cb=createCallback(r=>{if(r&&r.success){b.classList.toggle('active');b.textContent=a?'Keep Awake':'Disable Awake'}});if(cb)Android.keepScreenAwake(!a,cb)}
-        function checkNetwork(){const cb=createCallback(r=>{if(r&&r.success){const c=r.isOnline?'status-online':'status-offline',t=r.isOnline?'Online':'Offline';document.getElementById('networkStatus').innerHTML='<p><span class="status-indicator '+c+'"></span>'+t+'</p><p>Type: '+r.connectionType+'</p>'}});if(cb)Android.getNetworkStatus(cb)}
-        function pickFile(){const cb=createCallback(r=>{if(r&&r.success&&r.files&&r.files.length>0){showResult('fileResult',r.files);log('Picked: '+r.files[0].name)}else if(r&&r.error==='cancelled')log('Cancelled');else showResult('fileResult',r,true)});if(cb)Android.pickFile('*/*',false,cb)}
-        function pickMultipleFiles(){const cb=createCallback(r=>{if(r&&r.success&&r.files&&r.files.length>0){showResult('fileResult',r.files);log('Picked: '+r.files.length)}});if(cb)Android.pickFile('*/*',true,cb)}
-        function saveTestFile(){const c='Hello from HTML!',b=btoa(c);const cb=createCallback(r=>{if(r&&r.success){showResult('fileResult',r);log('Saved: '+r.path)}else showResult('fileResult',r,true)});if(cb)Android.saveFile('test.txt','text/plain',b,cb)}
-        function downloadFile(){const u=prompt('URL:','https://www.example.com');if(!u)return;const f=prompt('Filename:','downloaded.txt');if(!f)return;const cb=createCallback(r=>{if(r&&r.success){log('Started: '+r.filename);alert('Download started!')}else showResult('fileResult',r,true)});if(cb)Android.download(u,f,'application/octet-stream',cb)}
-        function shareText(){const t=prompt('Text:','Hello!');if(!t)return;Android.shareText(t,'App',createCallback(()=>{}))}
-        function copyToClipboard(){const t=prompt('Text:','Copied');if(!t)return;Android.copyToClipboard(t,createCallback(()=>alert('Copied!')))}
-        function getFromClipboard(){const cb=createCallback(r=>{if(r&&r.success)showResult('clipboardResult',{text:r.text||'(empty)'})});if(cb)Android.getFromClipboard(cb)}
-        function showNotification(){const t=prompt('Title:','Test');if(!t)return;const b=prompt('Body:','Test notification');const cb=createCallback(r=>{if(r&&r.success)log('Shown');else if(r&&r.error==='notification_permission_denied')alert('Permission needed!')});if(cb)Android.notify(t,b||'','',cb)}
-        function vibrateDevice(){const d=parseInt(prompt('Duration(ms):','500'))||500;Android.vibrate(d,createCallback(()=>{}))}
-        function openBrowser(){const u=prompt('URL:','https://google.com');if(u)Android.openBrowser(u,createCallback(()=>{}))}
-        function openDialer(){const n=prompt('Number:','');Android.openDialer(n||'',createCallback(()=>{}))}
-        function openEmail(){const t=prompt('Email:','');if(!t)return;Android.openEmail(t,'Subject','Body',createCallback(()=>{}))}
-        function openSettings(){const t=prompt('Setting:','apps');Android.openSettings(t||'apps',createCallback(()=>{}))}
-        function takePhoto(){const cb=createCallback(r=>{if(r&&r.success){if(r.imageBase64)showResult('cameraResult',{success:true,msg:'Captured'});else log('Photo taken')}else if(r&&r.error==='camera_permission_denied')showResult('cameraResult',r,true)});if(cb)Android.takePhoto(cb)}
-        function getLocation(){const cb=createCallback(r=>{if(r&&r.success)showResult('cameraResult',r);else if(r&&r.error==='location_permission_denied')showResult('cameraResult',r,true)});if(cb)Android.getLocation(cb)}
-        function checkBattery(){const cb=createCallback(r=>{if(r&&r.success){document.getElementById('batteryInfo').innerHTML='<p>Available: '+r.available+'</p><p>'+r.note+'</p>';if(navigator.getBattery)navigator.getBattery().then(b=>{document.getElementById('batteryInfo').innerHTML+='<div class="info-row"><span class="info-label">Level:</span><span class="info-value">'+Math.round(b.level*100)+'%</span></div><div class="info-row"><span class="info-label">Charging:</span><span class="info-value">'+(b.charging?'Yes':'No')+'</span></div>'})}});if(cb)Android.getBatteryInfo(cb)}
-        document.addEventListener('DOMContentLoaded',()=>{log('Initialized');refreshDeviceInfo();checkNetwork();checkBattery();window.addEventListener('online',()=>{log('Online');checkNetwork()});window.addEventListener('offline',()=>{log('Offline',true);checkNetwork()})});
-        document.addEventListener('visibilitychange',()=>log(document.hidden?'Paused':'Resumed'));
-    </script>
+  <h1>Ultimate HTML</h1>
+  <p class="ok">✓ WebView working. index.html loaded successfully.</p>
+  <p id="ua"></p>
+  <script>
+    document.getElementById('ua').textContent = 'UA: ' + navigator.userAgent;
+  </script>
 </body>
 </html>
