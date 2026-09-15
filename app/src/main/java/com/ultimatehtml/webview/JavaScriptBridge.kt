@@ -830,7 +830,13 @@ class JavaScriptBridge(private val activity: Activity) {
         
         activity.runOnUiThread {
             val js = "window.__androidCallbacks['$callbackId']($jsonResult)"
-            activity.webView.evaluateJavascript(js, null)
+            // Use reflection to access webView since it's in MainActivity
+            try {
+                val mainActivity = activity as? MainActivity
+                mainActivity?.webView?.evaluateJavascript(js, null)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to invoke callback: ${e.message}")
+            }
         }
     }
 }

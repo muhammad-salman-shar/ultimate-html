@@ -1,12 +1,71 @@
 ```
-# Dependencies
-node_modules/
+# Gradle
+.gradle/
+build/
 
-# Editors
-.vscode/
-
-# Environment
+# Android
+*.apk
+*.ap_
+*.aar
+*.dex
+*.so
+*.jar
+*.class
+*.aar
+*.so
+*.dylib
+*.dll
+*.exe
+*.o
+*.obj
+*.out
+*.bin
+*.dat
+*.idx
+*.lock
+*.properties
+*.xml
+*.json
+*.txt
+*.log
+*.tmp
+*.swp
+*.swo
+*.DS_Store
+Thumbs.db
 .env
 .env.local
-.env.*
+*.env.*
+coverage/
+htmlcov/
+.coverage
+node_modules/
+venv/
+.venv/
+__pycache__/
+.mypy_cache/
+.pytest_cache/
+target/
+.julia/
+zig*/
+julia-*/
+
+# Kotlin
+*.kotlin_module
+
+# Android specific
+app/build/
+app/src/main/assets/index.html
+app/src/main/res/drawable/ic_launcher_foreground.xml
+app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml
+app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml
+app/src/main/res/values/values.xml
+app/src/main/res/xml/file_paths.xml
+
+# Logs
+*.log
+hs_err_pid*.log
+
+# Local configuration
+local.properties
 ```
