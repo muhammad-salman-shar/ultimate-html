@@ -65,6 +65,23 @@ class AndroidBridge(
     }
 
     @JavascriptInterface
+    fun shareText(text: String): String {
+        return try {
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, text)
+            }
+            val chooser = Intent.createChooser(intent, "Share").apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            context.startActivity(chooser)
+            "ok"
+        } catch (e: Exception) {
+            "error:${e.message}"
+        }
+    }
+
+    @JavascriptInterface
     fun toast(msg: String) {
         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
     }

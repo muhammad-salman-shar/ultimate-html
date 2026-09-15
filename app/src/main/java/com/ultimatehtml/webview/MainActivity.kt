@@ -62,7 +62,12 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(AndroidBridge(this, webView), "Android")
 
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView?, url: String?) {
+                super.onPageFinished(view, url)
+                view?.evaluateJavascript(UNIVERSAL_SHIM, null)
+            }
+        }
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
@@ -109,5 +114,73 @@ class MainActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             super.onBackPressed()
         }
+    }
+
+    companion object {
+        // Universal shim — every HTML that loads will get this.
+        // Makes any standard web file API route through the Android bridge.
+        private val UNIVERSAL_SHIM = """
+        (function(){
+          if (window.__androidShimLoaded) return;
+          window.__androidShimLoaded = true;
+
+          try { delete window.showSaveFilePicker; } catch(e){}
+          try { delete window.showOpenFilePicker; } catch(e){}
+          try { delete window.showDirectoryPicker; } catch(e){}
+
+          function _ab(blob){
+            return new Promise(function(res, rej){
+              var fr = new FileReader();
+              fr.onload = function(){
+                var s = fr.result; var i = s.indexOf(',');
+                res(i >= 0 ? s.slice(i+1) : s);
+              };
+              fr.onerror = rej;
+              fr.readAsDataURL(blob);
+            });
+          }
+          window.__androidBlobToBase64 = _ab;
+
+          if (window.Android && typeof window.Android.saveFile === 'function') {
+            try {
+              navigator.share = async function(data){
+                try{
+                  if (data && data.files && data.files.length) {
+                    for (var i = 0; i < data.files.length; i++){
+                      var f = data.files[i];
+                      var b64 = await _ab(f);
+                      window.Android.shareFile(f.name || 'file', f.type || 'application/octet-stream', b64);
+                    }
+                    return;
+                  }
+                  if (data && data.text) { window.Android.shareText(data.text); return; }
+                  if (data && data.url)  { window.Android.shareText(data.url);  return; }
+                }catch(e){ console.error('share shim', e); }
+              };
+              navigator.canShare = function(){ return true; };
+            } catch(e){}
+          }
+
+          var _origClick = HTMLAnchorElement.prototype.click;
+          HTMLAnchorElement.prototype.click = function(){
+            try{
+              if (this.hasAttribute('download') &&
+                  this.href && this.href.indexOf('blob:') === 0 &&
+                  window.Android && typeof window.Android.saveFile === 'function') {
+                var name = this.getAttribute('download') || 'file';
+                fetch(this.href)
+                  .then(function(r){ return r.blob(); })
+                  .then(function(b){ return _ab(b); })
+                  .then(function(b64){
+                    window.Android.saveFile(name, b.type || 'application/octet-stream', b64);
+                  })
+                  .catch(function(e){ console.error('download shim', e); });
+                return;
+              }
+            }catch(e){}
+            return _origClick.apply(this, arguments);
+          };
+        })();
+        """.trimIndent()
     }
 }

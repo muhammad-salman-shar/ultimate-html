@@ -1102,18 +1102,23 @@ async function downloadBlob(blob, filename){
 }
 
 async function saveFileToDevice(file, allowPicker){
-  if (window.Android && typeof window.Android.saveFile === "function"){
+  if (allowPicker && typeof window.showSaveFilePicker === 'function'){
     try{
-      const dataUrl = await blobToDataURL(file.blob);
-      const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-      const mime = file.mime || file.blob.type || "application/octet-stream";
-      const res = window.Android.saveFile(file.name, mime, b64);
-      if (res && res.indexOf("ok") === 0) return "saved";
-      return "error:" + res;
-    }catch(e){ return "error:" + e.message; }
+      const ext = (file.name.split('.').pop() || 'bin').toLowerCase();
+      const handle = await window.showSaveFilePicker({
+        suggestedName: file.name,
+        types: [{ description: file.mime, accept: { [file.mime]: ['.' + ext] } }]
+      });
+      const w = await handle.createWritable();
+      await w.write(file.blob);
+      await w.close();
+      return 'saved';
+    }catch(err){
+      if (err && err.name === 'AbortError') return 'cancelled';
+    }
   }
   downloadBlob(file.blob, file.name);
-  return "downloaded";
+  return 'downloaded';
 }
 
 sheet.btnSave.addEventListener('click', async () => {
@@ -1154,33 +1159,39 @@ sheet.btnSave.addEventListener('click', async () => {
 });
 
 sheet.btnShare.addEventListener('click', async () => {
+  if (typeof navigator.share !== 'function'){
+    setSheetStatus('Sharing is not supported here — use "Save to device" instead.', 'err');
+    return;
+  }
+
   sheet.btnShare.disabled = true;
   sheet.btnSave.disabled = true;
-  setSheetStatus('Preparing file...');
+  setSheetStatus('Opening share sheet...');
+
   try{
     const files = await buildOutputFiles();
-    if (window.Android && typeof window.Android.shareFile === 'function'){
-      const f = files[0];
-      const dataUrl = await blobToDataURL(f.blob);
-      const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
-      const mime = f.mime || f.blob.type || 'application/octet-stream';
-      const res = window.Android.shareFile(f.name, mime, b64);
-      if (res && res.indexOf('ok') === 0){
-        setSheetStatus('✔ Share sheet opened', 'ok');
-      } else {
-        setSheetStatus('Share failed: ' + res, 'err');
-      }
-    } else {
-      setSheetStatus('Sharing not available.', 'err');
+    const shareFiles = files.map(f => new File([f.blob], f.name, { type: f.mime }));
+
+    if (navigator.canShare && !navigator.canShare({ files: shareFiles })){
+      throw new Error('file sharing is not supported on this device');
     }
+
+    await navigator.share({ files: shareFiles, title: shareFiles[0].name });
+    setSheetStatus('✔ Shared / saved 📁', 'ok');
   }catch(err){
-    console.error(err);
-    setSheetStatus('Share error: ' + (err && err.message ? err.message : err), 'err');
+    if (err && err.name === 'AbortError'){
+      setSheetStatus('Share cancelled.', '');
+    } else {
+      setSheetStatus('Couldn\'t share (' + (err && err.message ? err.message : err) +
+                     ') — try "Save to device".', 'err');
+    }
   }finally{
     sheet.btnShare.disabled = false;
     sheet.btnSave.disabled = false;
   }
 });
+
+if (typeof navigator.share !== 'function') sheet.btnShare.hidden = true;
 
 els.btnDownloadPdf.addEventListener('click', openSheet);
 
