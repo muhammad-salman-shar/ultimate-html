@@ -1,51 +1,12 @@
 ```
-# Android build artifacts
-*.apk
-*.aar
-*.jar
-*.dex
+# Dependencies
+node_modules/
 
-# Android build directories
-build/
-.externalNativeBuild/
-.intermediates/
-.profile/
+# Editors
+.vscode/
 
-# Gradle
-.gradle/
-!gradle/wrapper/gradle-wrapper.properties
-
-# Local configuration file (sdk path, etc)
-local.properties
-
-# Log Files
-*.log
-
-# Android Studio Navigation editor temp files
-.navigation/
-
-# Android Studio captures folder
-captures/
-
-# IntelliJ IDEA artifacts
-*.iml
-*.iws
-.idea/
-
-# Temporary folder for Detox
-detox_temp/
-
-# Proguard rules
-proguard-rules.pro
-
-# Generated files
-gen/
-out/
-
-# Debug symbols
-*.map
-*.sym
-
-# Device state config
-device-state.json
+# Environment
+.env
+.env.local
+.env.*
 ```
