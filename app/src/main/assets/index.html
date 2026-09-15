@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Native HTML App</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #667eea;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .btn-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 14px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            box-shadow: 0 2px 8px rgba(245, 87, 108, 0.3);
+        }
+
+        button.success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 2px 8px rgba(79, 172, 254, 0.3);
+        }
+
+        button.warning {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 2px 8px rgba(250, 112, 154, 0.3);
+        }
+
+        button.info {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            color: #333;
+            box-shadow: 0 2px 8px rgba(168, 237, 234, 0.3);
+        }
+
+        .result-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 12px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+
+        .result-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .input-group {
+            margin-bottom: 12px;
+        }
+
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 6px;
+        }
+
+        .input-group input,
+        .input-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .status-online {
+            background: #4caf50;
+        }
+
+        .status-offline {
+            background: #f44336;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 13px;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            font-weight: 500;
+            color: #333;
+        }
+
+        #log {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.9);
+            color: #0f0;
+            padding: 10px 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 100px;
+            overflow-y: auto;
+            transform: translateY(100%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+        }
+
+        #log.visible {
+            transform: translateY(0);
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Native HTML App</h1>
+            <p>WebView Bridge Demo</p>
+        </header>
+
+        <!-- File Operations -->
+        <div class="section">
+            <div class="section-title">📁 File Operations</div>
+            <div class="btn-grid">
+                <button onclick="pickFile()">Pick File</button>
+                <button onclick="saveFileDemo()">Save File</button>
+                <button onclick="openFileDemo()">Open File</button>
+                <button onclick="downloadDemo()">Download</button>
+            </div>
+            <div id="file-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Sharing -->
+        <div class="section">
+            <div class="section-title">📤 Sharing</div>
+            <div class="btn-grid">
+                <button onclick="shareTextDemo()">Share Text</button>
+                <button onclick="shareFileDemo()">Share File</button>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+                <label>Text to share:</label>
+                <input type="text" id="share-text" placeholder="Enter text to share...">
+            </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="section">
+            <div class="section-title">🔔 Notifications</div>
+            <div class="btn-grid">
+                <button onclick="showNotification()">Show Notification</button>
+                <button onclick="cancelNotificationDemo()" class="secondary">Cancel</button>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+                <label>Title:</label>
+                <input type="text" id="notif-title" placeholder="Notification title" value="Test Notification">
+            </div>
+            <div class="input-group">
+                <label>Body:</label>
+                <input type="text" id="notif-body" placeholder="Notification body" value="This is a test notification">
+            </div>
+        </div>
+
+        <!-- Clipboard -->
+        <div class="section">
+            <div class="section-title">📋 Clipboard</div>
+            <div class="btn-grid">
+                <button onclick="copyToClipboardDemo()">Copy Text</button>
+                <button onclick="readFromClipboardDemo()">Read Clipboard</button>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+                <label>Text to copy:</label>
+                <input type="text" id="clipboard-text" placeholder="Enter text to copy...">
+            </div>
+            <div id="clipboard-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Device Interaction -->
+        <div class="section">
+            <div class="section-title">📳 Device Interaction</div>
+            <div class="btn-grid">
+                <button onclick="vibrateDevice()">Vibrate</button>
+                <button onclick="toggleFullscreen()">Fullscreen</button>
+                <button onclick="keepScreenOn(true)" class="success">Keep Screen On</button>
+                <button onclick="keepScreenOn(false)" class="secondary">Allow Sleep</button>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+                <label>Vibration duration (ms):</label>
+                <input type="number" id="vibrate-duration" value="500" min="1" max="10000">
+            </div>
+        </div>
+
+        <!-- Camera / Media -->
+        <div class="section">
+            <div class="section-title">📷 Camera / Media</div>
+            <div class="btn-grid">
+                <button onclick="takePhoto()">Take Photo</button>
+                <button onclick="recordVideo()">Record Video</button>
+            </div>
+            <div id="camera-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Location -->
+        <div class="section">
+            <div class="section-title">📍 Location</div>
+            <div class="btn-grid">
+                <button onclick="getLocation()">Get Location</button>
+            </div>
+            <div id="location-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Device Info -->
+        <div class="section">
+            <div class="section-title">📱 Device Information</div>
+            <div class="btn-grid">
+                <button onclick="getDeviceInfo()">Device Info</button>
+                <button onclick="getBatteryInfo()">Battery</button>
+                <button onclick="getNetworkInfo()">Network</button>
+                <button onclick="getScreenInfo()">Screen</button>
+            </div>
+            <div id="device-info-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- External Apps -->
+        <div class="section">
+            <div class="section-title">🔗 External Apps</div>
+            <div class="btn-grid">
+                <button onclick="openBrowser()">Open Browser</button>
+                <button onclick="openDialerDemo()">Open Dialer</button>
+                <button onclick="openEmailDemo()">Open Email</button>
+                <button onclick="openSettings('SETTINGS')">Settings</button>
+            </div>
+            <div class="input-group" style="margin-top: 12px;">
+                <label>URL to open:</label>
+                <input type="text" id="url-to-open" placeholder="https://example.com" value="https://www.google.com">
+            </div>
+            <div class="input-group">
+                <label>Phone number:</label>
+                <input type="tel" id="phone-number" placeholder="+1234567890" value="">
+            </div>
+        </div>
+
+        <!-- Permissions -->
+        <div class="section">
+            <div class="section-title">🔐 Permissions</div>
+            <div class="btn-grid">
+                <button onclick="requestCameraPermission()">Request Camera</button>
+                <button onclick="requestLocationPermission()">Request Location</button>
+                <button onclick="checkStoragePermission()">Check Storage</button>
+            </div>
+            <div id="permission-result" class="result-box" style="display:none;"></div>
+        </div>
+
+        <!-- Status -->
+        <div class="section">
+            <div class="section-title">📊 Status</div>
+            <div class="info-row">
+                <span class="info-label">
+                    <span class="status-indicator" id="network-status"></span>
+                    Network
+                </span>
+                <span class="info-value" id="network-status-text">Checking...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Bridge Ready</span>
+                <span class="info-value" id="bridge-status">No</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="log"></div>
+
+    <script>
+        // Logger for debugging
+        function log(message, data = null) {
+            const logEl = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            let logMessage = `[${timestamp}] ${message}`;
+            if (data) {
+                logMessage += ': ' + JSON.stringify(data, null, 2);
+            }
+            console.log(logMessage);
+            
+            logEl.innerHTML = logMessage + '<br>' + logEl.innerHTML;
+            logEl.classList.add('visible');
+            
+            setTimeout(() => {
+                logEl.classList.remove('visible');
+            }, 5000);
+        }
+
+        function showResult(elementId, data) {
+            const el = document.getElementById(elementId);
+            el.style.display = 'block';
+            el.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+        // Check if Android bridge is available
+        function isAndroidAvailable() {
+            return typeof Android !== 'undefined' && Android !== null;
+        }
+
+        // Update bridge status
+        function updateBridgeStatus() {
+            const statusEl = document.getElementById('bridge-status');
+            if (isAndroidAvailable()) {
+                statusEl.textContent = 'Yes ✓';
+                statusEl.style.color = '#4caf50';
+            } else {
+                statusEl.textContent = 'No ✗';
+                statusEl.style.color = '#f44336';
+            }
+        }
+
+        // ========== FILE OPERATIONS ==========
+
+        function pickFile() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            log('Picking file...');
+            Android.pickFile('*/*', 'false');
+        }
+
+        function saveFileDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const filename = 'test_' + Date.now() + '.txt';
+            const content = 'Hello from WebView! This file was saved at ' + new Date().toISOString();
+            const base64Content = btoa(content);
+            
+            log('Saving file: ' + filename);
+            Android.saveFile(filename, base64Content, 'text/plain');
+        }
+
+        function openFileDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const filename = prompt('Enter filename to open:', 'test_' + Date.now() + '.txt');
+            if (filename) {
+                Android.openFile(filename, 'text/plain');
+            }
+        }
+
+        function downloadDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const url = prompt('Enter URL to download:', 'https://www.example.com');
+            if (url) {
+                const filename = 'download_' + Date.now() + '.html';
+                Android.download(url, filename, 'text/html');
+            }
+        }
+
+        // ========== SHARING ==========
+
+        function shareTextDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const text = document.getElementById('share-text').value || 'Hello from WebView!';
+            Android.shareText(text, 'Shared from App');
+        }
+
+        function shareFileDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const filename = prompt('Enter filename to share:', 'test.txt');
+            if (filename) {
+                Android.shareFile(filename, 'text/plain');
+            }
+        }
+
+        // ========== NOTIFICATIONS ==========
+
+        function showNotification() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const title = document.getElementById('notif-title').value || 'Test Notification';
+            const body = document.getElementById('notif-body').value || 'This is a test notification';
+            Android.notify(title, body, '');
+        }
+
+        function cancelNotificationDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const notifId = parseInt(prompt('Enter notification ID to cancel:', '1000'));
+            if (!isNaN(notifId)) {
+                Android.cancelNotification(notifId);
+            }
+        }
+
+        // ========== CLIPBOARD ==========
+
+        function copyToClipboardDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const text = document.getElementById('clipboard-text').value || 'Hello from WebView!';
+            Android.copyToClipboard(text);
+        }
+
+        function readFromClipboardDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.readFromClipboard();
+        }
+
+        // ========== DEVICE INTERACTION ==========
+
+        function vibrateDevice() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const duration = parseInt(document.getElementById('vibrate-duration').value) || 500;
+            Android.vibrate(duration);
+            log('Vibrating for ' + duration + 'ms');
+        }
+
+        function toggleFullscreen() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const isCurrentlyFullscreen = document.fullscreenElement !== null;
+            Android.setFullscreen(!isCurrentlyFullscreen ? 'true' : 'false');
+        }
+
+        function keepScreenOn(enable) {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.keepScreenOn(enable ? 'true' : 'false');
+            log('Keep screen on: ' + enable);
+        }
+
+        // ========== CAMERA / MEDIA ==========
+
+        function takePhoto() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            log('Launching camera...');
+            Android.takePhoto();
+        }
+
+        function recordVideo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            log('Launching video recording...');
+            Android.recordVideo();
+        }
+
+        // ========== LOCATION ==========
+
+        function getLocation() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            log('Getting location...');
+            Android.getLocation();
+        }
+
+        // ========== DEVICE INFO ==========
+
+        function getDeviceInfo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.getDeviceInfo();
+        }
+
+        function getBatteryInfo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.getBatteryInfo();
+        }
+
+        function getNetworkInfo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.getNetworkInfo();
+        }
+
+        function getScreenInfo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.getScreenInfo();
+        }
+
+        // ========== EXTERNAL APPS ==========
+
+        function openBrowser() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const url = document.getElementById('url-to-open').value || 'https://www.google.com';
+            Android.openUrl(url);
+        }
+
+        function openDialerDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const phoneNumber = document.getElementById('phone-number').value || '';
+            Android.openDialer(phoneNumber);
+        }
+
+        function openEmailDemo() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            const email = prompt('Enter email address:', 'test@example.com');
+            if (email) {
+                Android.openEmail(email, 'Test Subject', 'Test body');
+            }
+        }
+
+        function openSettings(action) {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.openSettings(action);
+        }
+
+        // ========== PERMISSIONS ==========
+
+        function requestCameraPermission() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.requestPermissions(JSON.stringify(['android.permission.CAMERA']));
+        }
+
+        function requestLocationPermission() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.requestPermissions(JSON.stringify([
+                'android.permission.ACCESS_FINE_LOCATION',
+                'android.permission.ACCESS_COARSE_LOCATION'
+            ]));
+        }
+
+        function checkStoragePermission() {
+            if (!isAndroidAvailable()) {
+                alert('Android bridge not available');
+                return;
+            }
+            Android.checkPermission('android.permission.READ_EXTERNAL_STORAGE');
+        }
+
+        // ========== BRIDGE CALLBACKS ==========
+
+        // Set up AndroidBridge callbacks
+        window.AndroidBridge = {
+            onFilePickResult: function(result) {
+                log('File pick result', result);
+                showResult('file-result', result);
+            },
+            
+            onFileSaveResult: function(result) {
+                log('File save result', result);
+                showResult('file-result', result);
+            },
+            
+            onFileOpenResult: function(result) {
+                log('File open result', result);
+                showResult('file-result', result);
+            },
+            
+            onDownloadResult: function(result) {
+                log('Download result', result);
+                showResult('file-result', result);
+            },
+            
+            onShareResult: function(result) {
+                log('Share result', result);
+            },
+            
+            onNotificationResult: function(result) {
+                log('Notification result', result);
+            },
+            
+            onClipboardResult: function(result) {
+                log('Clipboard result', result);
+                showResult('clipboard-result', result);
+            },
+            
+            onVibrateResult: function(result) {
+                log('Vibrate result', result);
+            },
+            
+            onFullscreenResult: function(result) {
+                log('Fullscreen result', result);
+            },
+            
+            onKeepScreenOnResult: function(result) {
+                log('Keep screen on result', result);
+            },
+            
+            onCameraResult: function(result) {
+                log('Camera result', result);
+                showResult('camera-result', result);
+            },
+            
+            onLocationResult: function(result) {
+                log('Location result', result);
+                showResult('location-result', result);
+            },
+            
+            onDeviceInfoResult: function(result) {
+                log('Device info result', result);
+                showResult('device-info-result', result);
+            },
+            
+            onBatteryResult: function(result) {
+                log('Battery result', result);
+                showResult('device-info-result', result);
+            },
+            
+            onNetworkResult: function(result) {
+                log('Network result', result);
+                updateNetworkStatus(result);
+            },
+            
+            onScreenInfoResult: function(result) {
+                log('Screen info result', result);
+                showResult('device-info-result', result);
+            },
+            
+            onOpenUrlResult: function(result) {
+                log('Open URL result', result);
+            },
+            
+            onOpenDialerResult: function(result) {
+                log('Open dialer result', result);
+            },
+            
+            onOpenEmailResult: function(result) {
+                log('Open email result', result);
+            },
+            
+            onOpenSettingsResult: function(result) {
+                log('Open settings result', result);
+            },
+            
+            onPermissionResult: function(result) {
+                log('Permission result', result);
+                showResult('permission-result', result);
+            },
+            
+            onPermissionCheckResult: function(result) {
+                log('Permission check result', result);
+                showResult('permission-result', result);
+            }
+        };
+
+        // Listen for custom events from AndroidBridge helper
+        window.addEventListener('onFilePickResult', (e) => AndroidBridge.onFilePickResult(e.detail));
+        window.addEventListener('onFileSaveResult', (e) => AndroidBridge.onFileSaveResult(e.detail));
+        window.addEventListener('onFileOpenResult', (e) => AndroidBridge.onFileOpenResult(e.detail));
+        window.addEventListener('onDownloadResult', (e) => AndroidBridge.onDownloadResult(e.detail));
+        window.addEventListener('onShareResult', (e) => AndroidBridge.onShareResult(e.detail));
+        window.addEventListener('onNotificationResult', (e) => AndroidBridge.onNotificationResult(e.detail));
+        window.addEventListener('onClipboardResult', (e) => AndroidBridge.onClipboardResult(e.detail));
+        window.addEventListener('onVibrateResult', (e) => AndroidBridge.onVibrateResult(e.detail));
+        window.addEventListener('onFullscreenResult', (e) => AndroidBridge.onFullscreenResult(e.detail));
+        window.addEventListener('onKeepScreenOnResult', (e) => AndroidBridge.onKeepScreenOnResult(e.detail));
+        window.addEventListener('onCameraResult', (e) => AndroidBridge.onCameraResult(e.detail));
+        window.addEventListener('onLocationResult', (e) => AndroidBridge.onLocationResult(e.detail));
+        window.addEventListener('onDeviceInfoResult', (e) => AndroidBridge.onDeviceInfoResult(e.detail));
+        window.addEventListener('onBatteryResult', (e) => AndroidBridge.onBatteryResult(e.detail));
+        window.addEventListener('onNetworkResult', (e) => AndroidBridge.onNetworkResult(e.detail));
+        window.addEventListener('onScreenInfoResult', (e) => AndroidBridge.onScreenInfoResult(e.detail));
+        window.addEventListener('onOpenUrlResult', (e) => AndroidBridge.onOpenUrlResult(e.detail));
+        window.addEventListener('onOpenDialerResult', (e) => AndroidBridge.onOpenDialerResult(e.detail));
+        window.addEventListener('onOpenEmailResult', (e) => AndroidBridge.onOpenEmailResult(e.detail));
+        window.addEventListener('onOpenSettingsResult', (e) => AndroidBridge.onOpenSettingsResult(e.detail));
+        window.addEventListener('onPermissionResult', (e) => AndroidBridge.onPermissionResult(e.detail));
+        window.addEventListener('onPermissionCheckResult', (e) => AndroidBridge.onPermissionCheckResult(e.detail));
+
+        // ========== UTILITY FUNCTIONS ==========
+
+        function updateNetworkStatus(result) {
+            const indicator = document.getElementById('network-status');
+            const text = document.getElementById('network-status-text');
+            
+            if (result && result.isConnected) {
+                indicator.className = 'status-indicator status-online';
+                text.textContent = result.networkType || 'Online';
+            } else {
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'Offline';
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateBridgeStatus();
+            
+            // Initial network check
+            if (isAndroidAvailable()) {
+                Android.getNetworkInfo();
+            } else {
+                // Fallback for browser testing
+                const indicator = document.getElementById('network-status');
+                const text = document.getElementById('network-status-text');
+                indicator.className = 'status-indicator status-' + (navigator.onLine ? 'online' : 'offline');
+                text.textContent = navigator.onLine ? 'Browser Online' : 'Browser Offline';
+            }
+            
+            log('Application initialized');
+        });
+
+        // Handle online/offline events
+        window.addEventListener('online', () => {
+            if (!isAndroidAvailable()) {
+                const indicator = document.getElementById('network-status');
+                const text = document.getElementById('network-status-text');
+                indicator.className = 'status-indicator status-online';
+                text.textContent = 'Browser Online';
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            if (!isAndroidAvailable()) {
+                const indicator = document.getElementById('network-status');
+                const text = document.getElementById('network-status-text');
+                indicator.className = 'status-indicator status-offline';
+                text.textContent = 'Browser Offline';
+            }
+        });
+    </script>
+</body>
+</html>
