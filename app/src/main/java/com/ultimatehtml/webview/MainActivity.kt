@@ -7,6 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
+import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
@@ -30,7 +31,6 @@ class MainActivity : AppCompatActivity() {
         ) { result ->
             val cb = filePathCallback ?: return@registerForActivityResult
             filePathCallback = null
-
             val uris: Array<Uri>? = if (result.resultCode == Activity.RESULT_OK) {
                 val data = result.data
                 when {
@@ -43,7 +43,6 @@ class MainActivity : AppCompatActivity() {
                     else -> null
                 }
             } else null
-
             cb.onReceiveValue(uris)
         }
 
@@ -62,8 +61,15 @@ class MainActivity : AppCompatActivity() {
 
         webView.addJavascriptInterface(AndroidBridge(this, webView), "Android")
 
-        // SHIM DISABLED FOR DEBUG
-        webView.webViewClient = WebViewClient()
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(
+                view: WebView?,
+                request: WebResourceRequest?
+            ): Boolean {
+                val url = request?.url?.toString() ?: return false
+                return handleExternalUrl(url)
+            }
+        }
 
         webView.webChromeClient = object : WebChromeClient() {
             override fun onShowFileChooser(
@@ -73,29 +79,59 @@ class MainActivity : AppCompatActivity() {
             ): Boolean {
                 filePathCallback?.onReceiveValue(null)
                 filePathCallback = callback
-
                 val intent: Intent = try {
                     params?.createIntent() ?: fallbackIntent()
                 } catch (e: Exception) {
                     fallbackIntent()
                 }
-
                 return try {
                     fileChooserLauncher.launch(intent)
                     true
                 } catch (e: Exception) {
                     filePathCallback = null
-                    Toast.makeText(
-                        this@MainActivity,
-                        "File picker failed: ${e.message}",
-                        Toast.LENGTH_LONG
-                    ).show()
+                    Toast.makeText(this@MainActivity, "File picker failed", Toast.LENGTH_LONG).show()
                     false
                 }
             }
         }
 
         webView.loadUrl("file:///android_asset/index.html")
+    }
+
+    private fun handleExternalUrl(url: String): Boolean {
+        val lower = url.lowercase()
+
+        val external = when {
+            lower.startsWith("whatsapp://") -> true
+            lower.contains("wa.me/") -> true
+            lower.contains("api.whatsapp.com") -> true
+            lower.contains("chat.whatsapp.com") -> true
+            lower.startsWith("tel:") -> true
+            lower.startsWith("mailto:") -> true
+            lower.startsWith("sms:") -> true
+            lower.startsWith("intent:") -> true
+            lower.startsWith("market://") -> true
+            lower.startsWith("upi://") -> true
+            !lower.startsWith("file://") && !lower.startsWith("data:") &&
+                (lower.startsWith("http://") || lower.startsWith("https://")) -> true
+            else -> false
+        }
+
+        if (!external) return false
+
+        return try {
+            val intent = if (lower.startsWith("http")) {
+                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            } else {
+                Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            Toast.makeText(this, "No app found to open this link", Toast.LENGTH_LONG).show()
+            true
+        }
     }
 
     private fun fallbackIntent(): Intent =
@@ -110,73 +146,5 @@ class MainActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             super.onBackPressed()
         }
-    }
-
-    companion object {
-        // Universal shim — every HTML that loads will get this.
-        // Makes any standard web file API route through the Android bridge.
-        private val UNIVERSAL_SHIM = """
-        (function(){
-          if (window.__androidShimLoaded) return;
-          window.__androidShimLoaded = true;
-
-          try { delete window.showSaveFilePicker; } catch(e){}
-          try { delete window.showOpenFilePicker; } catch(e){}
-          try { delete window.showDirectoryPicker; } catch(e){}
-
-          function _ab(blob){
-            return new Promise(function(res, rej){
-              var fr = new FileReader();
-              fr.onload = function(){
-                var s = fr.result; var i = s.indexOf(',');
-                res(i >= 0 ? s.slice(i+1) : s);
-              };
-              fr.onerror = rej;
-              fr.readAsDataURL(blob);
-            });
-          }
-          window.__androidBlobToBase64 = _ab;
-
-          if (window.Android && typeof window.Android.saveFile === 'function') {
-            try {
-              navigator.share = async function(data){
-                try{
-                  if (data && data.files && data.files.length) {
-                    for (var i = 0; i < data.files.length; i++){
-                      var f = data.files[i];
-                      var b64 = await _ab(f);
-                      window.Android.shareFile(f.name || 'file', f.type || 'application/octet-stream', b64);
-                    }
-                    return;
-                  }
-                  if (data && data.text) { window.Android.shareText(data.text); return; }
-                  if (data && data.url)  { window.Android.shareText(data.url);  return; }
-                }catch(e){ console.error('share shim', e); }
-              };
-              navigator.canShare = function(){ return true; };
-            } catch(e){}
-          }
-
-          var _origClick = HTMLAnchorElement.prototype.click;
-          HTMLAnchorElement.prototype.click = function(){
-            try{
-              if (this.hasAttribute('download') &&
-                  this.href && this.href.indexOf('blob:') === 0 &&
-                  window.Android && typeof window.Android.saveFile === 'function') {
-                var name = this.getAttribute('download') || 'file';
-                fetch(this.href)
-                  .then(function(r){ return r.blob(); })
-                  .then(function(b){ return _ab(b); })
-                  .then(function(b64){
-                    window.Android.saveFile(name, b.type || 'application/octet-stream', b64);
-                  })
-                  .catch(function(e){ console.error('download shim', e); });
-                return;
-              }
-            }catch(e){}
-            return _origClick.apply(this, arguments);
-          };
-        })();
-        """.trimIndent()
     }
 }

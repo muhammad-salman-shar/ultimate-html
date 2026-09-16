@@ -1,1196 +1,567 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PhotoPDF lite</title>
-<style>
-  :root{
-    --bg:#080b14;
-    --text:#e9edf7;
-    --muted:#8a93ab;
-    --card:rgba(255,255,255,.045);
-    --card-solid:#121828;
-    --border:rgba(255,255,255,.09);
-    --hover:rgba(255,255,255,.06);
-    --accent:#7c5cff;
-    --accent-2:#22d3ee;
-    --pink:#ff5ca8;
-    --ok:#34d399;
-    --glow1:rgba(124,92,255,.30);
-    --glow2:rgba(34,211,238,.16);
-    --glow3:rgba(255,92,168,.14);
-    color-scheme: dark;
-  }
-  [data-theme="light"]{
-    --bg:#f4f6fc;
-    --text:#131a2b;
-    --muted:#5c6784;
-    --card:rgba(255,255,255,.78);
-    --card-solid:#ffffff;
-    --border:rgba(16,24,48,.10);
-    --hover:rgba(0,0,0,.06);
-    --glow1:rgba(124,92,255,.20);
-    --glow2:rgba(34,211,238,.16);
-    --glow3:rgba(255,92,168,.13);
-    color-scheme: light;
-  }
-
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{min-height:100%}
-  body{
-    font-family:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
-    background:var(--bg); color:var(--text);
-    padding:24px 16px 70px;
-    position:relative; overflow-x:hidden;
-    transition:background .35s ease, color .35s ease;
-    -webkit-font-smoothing:antialiased;
-  }
-  body::before{
-    content:''; position:fixed; inset:0; z-index:-1; pointer-events:none;
-    background:
-      radial-gradient(620px 420px at 8% -6%, var(--glow1), transparent 62%),
-      radial-gradient(520px 420px at 96% 8%, var(--glow2), transparent 62%),
-      radial-gradient(620px 520px at 50% 112%, var(--glow3), transparent 62%);
-  }
-
-  .wrap{max-width:860px;margin:0 auto;display:flex;flex-direction:column;gap:16px}
-
-  /* header */
-  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 4px}
-  .brand{display:flex;align-items:center;gap:13px;min-width:0}
-  .logo{
-    width:48px;height:48px;border-radius:15px;display:grid;place-items:center;font-size:23px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    box-shadow:0 12px 32px -12px var(--accent);
-    flex:0 0 auto;
-  }
-  h1{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
-  .brand p{font-size:12.5px;color:var(--muted);margin-top:3px}
-
-  /* theme switch */
-  .theme-switch{
-    display:flex; gap:3px; padding:4px; border-radius:14px;
-    background:var(--card); border:1px solid var(--border);
-    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-    flex:0 0 auto;
-  }
-  .theme-switch button{
-    width:36px; height:36px; border-radius:10px; border:none;
-    background:transparent; color:var(--text); cursor:pointer;
-    font-size:16px; line-height:1; display:grid; place-items:center;
-    transition: background .2s, transform .15s, box-shadow .25s;
-    font-family:inherit;
-  }
-  .theme-switch button:hover{ background:var(--hover); transform:translateY(-1px); }
-  .theme-switch button.active{
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    color:#fff;
-    box-shadow:0 8px 20px -10px var(--accent);
-  }
-  .theme-switch button:active{ transform:scale(.95); }
-
-  /* cards */
-  .card{
-    background:var(--card);border:1px solid var(--border);border-radius:20px;padding:18px;
-    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-    box-shadow:0 24px 60px -38px rgba(0,0,0,.95);
-    animation:rise .45s cubic-bezier(.22,1,.36,1) both;
-  }
-  @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  .card h2{font-size:14px;font-weight:600;letter-spacing:.01em;display:flex;align-items:center;gap:8px}
-  .hint{font-size:12px;color:var(--muted);margin-top:4px;line-height:1.45}
-
-  /* dropzone */
-  .dropzone{
-    border:1.6px dashed var(--border);border-radius:16px;padding:34px 18px;text-align:center;
-    cursor:pointer;transition:.25s;background:rgba(255,255,255,.015);
-  }
-  .dropzone:hover,.dropzone.drag{
-    border-color:var(--accent);
-    background:linear-gradient(180deg, rgba(124,92,255,.12), rgba(34,211,238,.06));
-    transform:translateY(-1px);
-  }
-  .dz-icon{
-    width:52px;height:52px;margin:0 auto 12px;border-radius:16px;display:grid;place-items:center;
-    font-size:26px;font-weight:300;color:#fff;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    box-shadow:0 14px 34px -14px var(--accent);
-  }
-  .dz-title{font-size:15px;font-weight:650}
-  .dz-sub{font-size:12.5px;color:var(--muted);margin-top:5px}
-
-  /* rows */
-  .row{display:flex;align-items:center;gap:10px}
-  .between{justify-content:space-between}
-  .pill{
-    font-size:11.5px;font-weight:700;padding:2px 9px;border-radius:999px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
-  }
-
-  /* thumbs */
-  .thumbs{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(104px,1fr));
-    gap:10px;margin-top:14px;max-height:340px;overflow-y:auto;padding-right:2px;
-  }
-  .thumb{
-    position:relative;border-radius:14px;overflow:hidden;aspect-ratio:1;
-    border:1px solid var(--border);background:var(--card-solid);
-  }
-  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .thumb .rm{
-    position:absolute;top:5px;right:5px;width:23px;height:23px;border-radius:50%;
-    border:none;background:rgba(0,0,0,.62);color:#fff;font-size:15px;line-height:1;
-    cursor:pointer;display:grid;place-items:center;backdrop-filter:blur(4px);
-  }
-  .thumb .rm:hover{background:#ff4d6d}
-  .tmeta{
-    position:absolute;left:0;right:0;bottom:0;font-size:10px;padding:4px 6px;color:#fff;
-    background:linear-gradient(transparent, rgba(0,0,0,.78));text-align:left;
-  }
-
-  /* form */
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:14px}
-  .field label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px;font-weight:500}
-  input[type=number],input[type=text],select{
-    width:100%;background:var(--card-solid);color:var(--text);
-    border:1px solid var(--border);border-radius:12px;padding:11px 12px;
-    font-size:14px;font-family:inherit;outline:none;transition:.2s;appearance:none;
-  }
-  select{
-    background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);
-    background-position:calc(100% - 18px) 50%, calc(100% - 13px) 50%;
-    background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:34px;
-  }
-  input[type=number]:focus,input[type=text]:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3.5px rgba(124,92,255,.18)}
-  .input-group{display:flex;gap:8px}
-  .input-group input{flex:1;min-width:0}
-  .input-group select{width:88px;flex:0 0 auto}
-
-  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-  .chip{
-    font-size:12px;font-weight:600;padding:7px 13px;border-radius:999px;cursor:pointer;
-    background:var(--card);color:var(--muted);border:1px solid var(--border);
-    font-family:inherit;transition:.2s;
-  }
-  .chip:hover{color:var(--text);border-color:var(--accent)}
-  .chip.active{
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    color:#fff;border-color:transparent;
-    box-shadow:0 8px 22px -10px var(--accent);
-  }
-
-  /* buttons */
-  .actions{display:flex;flex-wrap:wrap;gap:10px}
-  .btn{
-    border:none;border-radius:13px;padding:12px 18px;font-size:13.5px;font-weight:650;
-    cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:inherit;
-    transition:transform .15s ease, box-shadow .25s ease, opacity .2s;
-    white-space:nowrap;text-decoration:none;
-  }
-  .btn:active{transform:scale(.97)}
-  .btn:disabled{opacity:.38;cursor:not-allowed;box-shadow:none}
-  .btn-primary{
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));color:#fff;
-    box-shadow:0 14px 32px -14px var(--accent);
-  }
-  .btn-primary:not(:disabled):hover{box-shadow:0 18px 38px -14px var(--accent)}
-  .btn-ghost{background:var(--card);color:var(--text);border:1px solid var(--border)}
-  .btn-ghost:not(:disabled):hover{border-color:var(--accent)}
-  .btn-pink{
-    background:linear-gradient(135deg,var(--pink),#fb923c);color:#fff;
-    box-shadow:0 14px 32px -14px var(--pink);
-  }
-  .btn-green{
-    background:linear-gradient(135deg,#34d399,#22d3ee);color:#052e1f;
-    box-shadow:0 14px 32px -14px #34d399;
-  }
-  .btn-danger{
-    background:linear-gradient(135deg,#ff4d6d,#ff7a45);color:#fff;
-    box-shadow:0 14px 32px -14px #ff4d6d;
-  }
-  .btn.small{padding:8px 13px;font-size:12px;border-radius:10px}
-
-  /* progress / status */
-  .progress{height:7px;border-radius:999px;background:var(--border);overflow:hidden;margin-top:16px}
-  .bar{
-    height:100%;width:0%;border-radius:999px;
-    background:linear-gradient(90deg,var(--accent),var(--accent-2));
-    transition:width .25s ease;
-  }
-  .status{font-size:12.8px;color:var(--muted);margin-top:14px;line-height:1.5}
-  .status[data-type="ok"]{color:var(--ok)}
-  .status[data-type="err"]{color:#ff6b81}
-
-  /* compressed images grid */
-  .result-grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-    gap:12px;margin-top:14px;
-  }
-  .r-item{
-    background:var(--card-solid);border:1px solid var(--border);border-radius:14px;
-    overflow:hidden;display:flex;flex-direction:column;
-  }
-  .r-item img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#000}
-  .r-body{padding:10px 11px 12px;display:flex;flex-direction:column;gap:6px}
-  .r-name{
-    font-size:11.5px;font-weight:600;
-    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-  }
-  .r-size{font-size:10.5px;color:var(--muted)}
-  .r-size b{color:var(--ok)}
-  .r-dl{
-    margin-top:3px;border:none;border-radius:9px;padding:8px 10px;
-    background:linear-gradient(135deg,var(--accent),var(--accent-2));
-    color:#fff;font-weight:700;font-size:11.5px;font-family:inherit;
-    cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;
-    transition:transform .15s, box-shadow .25s;text-decoration:none;
-  }
-  .r-dl:hover{transform:translateY(-1px);box-shadow:0 10px 22px -10px var(--accent)}
-
-  /* PDF result */
-  .pdf-box{
-    margin-top:14px;padding:16px;border-radius:14px;
-    background:var(--card-solid);border:1px solid var(--border);
-    display:flex;flex-wrap:wrap;gap:12px;align-items:center;
-  }
-  .pdf-stats{display:flex;gap:10px;flex:1 1 200px}
-  .stat{
-    flex:1;background:rgba(255,255,255,.03);border:1px solid var(--border);
-    border-radius:12px;padding:10px 12px;
-  }
-  [data-theme="light"] .stat{background:rgba(0,0,0,.02)}
-  .stat span{display:block;font-size:10.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase}
-  .stat b{display:block;font-size:15px;margin-top:4px;letter-spacing:-.01em}
-
-  /* clear all outputs section */
-  .clear-card{
-    display:flex; align-items:center; justify-content:space-between; gap:14px;
-    flex-wrap:wrap;
-  }
-  .clear-card .txt{min-width:0;flex:1 1 220px}
-
-  /* scrollbar */
-  .thumbs::-webkit-scrollbar{width:6px}
-  .thumbs::-webkit-scrollbar-thumb{background:var(--border);border-radius:99px}
-
-  /* ================= SAVE SHEET (bottom sheet modal) ================= */
-  .sheet-overlay{
-    position:fixed; inset:0; z-index:200;
-    display:flex; align-items:flex-end; justify-content:center;
-    background:rgba(3,5,12,.66);
-    -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px);
-    opacity:0; pointer-events:none; visibility:hidden;
-    transition:opacity .28s ease, visibility .28s ease;
-  }
-  .sheet-overlay.open{opacity:1; pointer-events:auto; visibility:visible}
-  .sheet{
-    width:100%; max-width:520px; max-height:92vh; overflow-y:auto;
-    background:var(--card-solid);
-    border:1px solid var(--border); border-bottom:none;
-    border-radius:24px 24px 0 0;
-    padding:10px 18px calc(22px + env(safe-area-inset-bottom,0px));
-    box-shadow:0 -30px 70px -30px rgba(0,0,0,.85);
-    transform:translateY(102%);
-    transition:transform .36s cubic-bezier(.22,1,.36,1);
-  }
-  .sheet-overlay.open .sheet{transform:translateY(0)}
-  .sheet-grab{width:42px;height:4px;border-radius:99px;background:var(--border);margin:6px auto 14px}
-  .sheet h3{font-size:16px;font-weight:700;letter-spacing:-.01em}
-  .sheet-x{
-    width:32px;height:32px;border-radius:10px;border:1px solid var(--border);
-    background:var(--card);color:var(--text);cursor:pointer;font-size:13px;
-    display:grid;place-items:center;font-family:inherit;transition:.2s;flex:0 0 auto;
-  }
-  .sheet-x:hover{background:var(--hover)}
-  .name-group{display:flex;gap:8px}
-  .name-group input{flex:1;min-width:0;font-weight:600}
-  .name-group select{width:96px;flex:0 0 auto;font-weight:700}
-  .sheet-info{
-    margin-top:14px;padding:11px 13px;border-radius:12px;font-size:12.5px;color:var(--muted);
-    background:rgba(255,255,255,.03);border:1px solid var(--border);line-height:1.55;
-  }
-  [data-theme="light"] .sheet-info{background:rgba(0,0,0,.025)}
-  .sheet-info b{color:var(--text)}
-  .sheet-actions{margin-top:16px}
-  .sheet-actions .btn{flex:1 1 150px;justify-content:center}
-  #sheetStatus{margin-top:12px}
-  #sheetStatus:empty{display:none}
-
-  @media (min-width:640px){
-    .sheet-overlay{align-items:center;padding:24px}
-    .sheet{
-      border-radius:24px; border-bottom:1px solid var(--border);
-      padding-bottom:22px;
-      transform:translateY(20px) scale(.97);
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tasker Flow — Exclusive Solo-Leveling RPG Productivity System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0b0c10;
+      --card-bg: #14171f;
+      --accent: #ff9900;
+      --accent-glow: rgba(255, 153, 0, 0.35);
+      --danger: #ef4444;
+      --success: #10b981;
+      --text-main: #f3f4f6;
+      --text-sub: #9ca3af;
+      --border: rgba(255, 255, 255, 0.08);
     }
-    .sheet-overlay.open .sheet{transform:none}
-    .sheet-grab{display:none}
-  }
-
-  @media (max-width:560px){
-    body{padding:18px 12px 60px}
-    .grid2{grid-template-columns:1fr}
-    .btn{flex:1 1 auto;justify-content:center}
-    h1{font-size:18px}
-    .brand p{font-size:11.5px}
-    .logo{width:42px;height:42px;border-radius:13px;font-size:20px}
-    .theme-switch button{width:32px;height:32px;font-size:14px}
-  }
-</style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      scroll-behavior: smooth;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      overflow-x: hidden;
+      line-height: 1.5;
+    }
+    .badge-bar {
+      background: linear-gradient(90deg, #7c2d12, #b45309, #7c2d12);
+      text-align: center;
+      padding: 10px;
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.5px;
+      color: #fef08a;
+      text-transform: uppercase;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    header {
+      padding: 60px 20px 30px;
+      text-align: center;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    .exclusive-pill {
+      display: inline-block;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid var(--danger);
+      color: #fca5a5;
+      padding: 6px 16px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      margin-bottom: 16px;
+      line-height: 1.2;
+    }
+    h1 span {
+      background: linear-gradient(90deg, #ff9900, #ff5500);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtext {
+      color: var(--text-sub);
+      font-size: 1.1rem;
+      margin-bottom: 30px;
+    }
+    .cta-group {
+      display: flex;
+      gap: 15px;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s ease;
+      border: none;
+      font-size: 0.95rem;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      box-shadow: 0 0 25px var(--accent-glow);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 0 35px rgba(255, 153, 0, 0.5);
+    }
+    .btn-outline {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border);
+      color: var(--text-main);
+    }
+    .btn-outline:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .section-title {
+      text-align: center;
+      font-size: 1.8rem;
+      margin-bottom: 35px;
+      font-weight: 700;
+    }
+    /* Gallery */
+    .screenshots-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+      margin-bottom: 60px;
+    }
+    .screen-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.3s ease, border-color 0.3s;
+      position: relative;
+    }
+    .screen-card:hover {
+      transform: translateY(-6px);
+      border-color: var(--accent);
+    }
+    .screen-card img {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .screen-label {
+      padding: 12px;
+      text-align: center;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: #111319;
+      color: var(--text-sub);
+    }
+    /* Pricing */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 25px;
+      margin-bottom: 60px;
+    }
+    .price-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 35px 25px;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.2s;
+    }
+    .price-card.featured {
+      border-color: var(--accent);
+      background: linear-gradient(180deg, #1d1912 0%, var(--card-bg) 40%);
+      box-shadow: 0 0 30px rgba(255, 153, 0, 0.15);
+    }
+    .badge-featured {
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent);
+      color: #000;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .price-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .price-val {
+      font-size: 2.3rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 18px;
+    }
+    .price-features {
+      list-style: none;
+      margin-bottom: 25px;
+      flex-grow: 1;
+    }
+    .price-features li {
+      margin-bottom: 10px;
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .price-features li::before {
+      content: "✓";
+      color: var(--success);
+      font-weight: bold;
+    }
+    /* Trust Matrix */
+    .trust-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 35px 30px;
+      margin-bottom: 60px;
+    }
+    .trust-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 25px;
+    }
+    .trust-item h4 {
+      font-size: 1.05rem;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .trust-item p {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+    /* Contact Box */
+    .contact-box {
+      text-align: center;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 40px 20px;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    .contact-box h3 {
+      font-size: 1.5rem;
+      margin-bottom: 12px;
+    }
+    .contact-meta {
+      margin: 20px 0;
+      font-size: 1rem;
+    }
+    .contact-meta div {
+      margin-bottom: 8px;
+    }
+    /* Popup Modal */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.85);
+      backdrop-filter: blur(8px);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      padding: 20px;
+    }
+    .modal-box {
+      background: #151821;
+      border: 1px solid var(--accent);
+      box-shadow: 0 0 50px rgba(255, 153, 0, 0.3);
+      max-width: 520px;
+      width: 100%;
+      border-radius: 22px;
+      padding: 35px 28px;
+      position: relative;
+      text-align: center;
+      animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.9); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .close-modal {
+      position: absolute;
+      top: 15px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: var(--text-sub);
+      font-size: 1.6rem;
+      cursor: pointer;
+    }
+    .modal-exclusive-tag {
+      background: var(--danger);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 800;
+      padding: 5px 12px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      display: inline-block;
+      margin-bottom: 15px;
+    }
+    .modal-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+    .modal-desc {
+      font-size: 0.92rem;
+      color: var(--text-sub);
+      margin-bottom: 22px;
+    }
+    /* Lightbox Modal */
+    .lightbox-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 10000;
+      padding: 15px;
+    }
+    .lightbox-overlay img {
+      max-width: 90%;
+      max-height: 85vh;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+    }
+  </style>
 </head>
 <body>
-<div class="wrap">
 
-  <header class="top">
-    <div class="brand">
-      <div class="logo">🖼️</div>
-      <div>
-        <h1>Photo Compressor</h1>
-        <p>Add photos · compress · make PDF · download</p>
-      </div>
-    </div>
+  <!-- Urgent Top Banner -->
+  <div class="badge-bar">
+    ⚡ STRICTLY LIMITED: Single Buyer Exclusive License • First Come, First Served
+  </div>
 
-    <!-- Theme switcher: dark / light / system -->
-    <div class="theme-switch" id="themeSwitch" role="group" aria-label="Theme">
-      <button type="button" data-theme-pref="light" title="Light theme" aria-label="Light">☀️</button>
-      <button type="button" data-theme-pref="dark"  title="Dark theme"  aria-label="Dark">🌙</button>
-      <button type="button" data-theme-pref="system" title="System theme" aria-label="System">💻</button>
+  <!-- Hero Section -->
+  <header>
+    <div class="exclusive-pill">🔥 Only 1 Single Copy Will Be Sold</div>
+    <h1>Own The Next Big <span>Solo-Leveling</span> Productivity System</h1>
+    <p class="subtext">
+      Turn procrastination into a punishing RPG. Native Kotlin code with automatic app blocking, stat drains, and built-in monetization systems.
+    </p>
+    <div class="cta-group">
+      <a href="#pricing" class="btn btn-primary">Check Pricing & Reserve License</a>
+      <button class="btn btn-outline" onclick="openModal()">View Urgent Opportunity</button>
     </div>
   </header>
 
-  <!-- ADD PHOTOS -->
-  <section class="card">
-    <div class="dropzone" id="dropzone">
-      <div class="dz-icon">＋</div>
-      <div class="dz-title">Add Photos</div>
-      <div class="dz-sub">Click or drag &amp; drop photos (multiple allowed)</div>
-    </div>
-    <input type="file" id="fileInput" accept="image/*" multiple hidden>
-  </section>
+  <div class="container">
+    
+    <!-- UI Previews Section -->
+    <h2 class="section-title">Actual App Interface (Interactive Preview)</h2>
+    <p style="text-align: center; color: var(--text-sub); margin-top: -25px; margin-bottom: 30px; font-size: 0.85rem;">
+      Click any screenshot below to inspect the full UI quality
+    </p>
+    <div class="screenshots-grid">
+      <div class="screen-card" onclick="openLightbox('1.jpg')">
+        <img src="1.jpg" alt="Screen 1" />
+        <div class="screen-label">Screen 1</div>
+      </div>
+      <div class="screen-card" onclick="openLightbox('2.jpg')">
+        <img src="2.jpg" alt="Screen 2" />
+        <div class="screen-label">Screen 2</div>
+      </div>
+      <div class="screen-card" onclick="openLightbox('3.jpg')">
+        <img src="3.jpg" alt="Screen 3" />
+        <div class="screen-label">Screen 3</div>
+      </div>
+      <div class="screen-card" onclick="openLightbox('4.jpg')">
+        <img src="4.jpg" alt="Screen 4" />
+        <div class="screen-label">Screen 4</div>
+      </div>
+      <div class="screen-card" onclick="openLightbox('5.jpg')">
+        <img src="5.jpg" alt="Screen 5" />
+        <div class="screen-label">Screen 5</div>
+      </div>
+      <div class="screen-card" onclick="openLightbox('6.jpg')">
+        <img src="6.jpg" alt="Screen 6" />
+        <div class="screen-label">Screen 6</div>
+      </div>
+      <div class="screen-card" onclick="openLightbox('7.jpg')">
+        <img src="7.jpg" alt="Screen 7" />
+        <div class="screen-label">Screen 7</div>
+      </div>
 
-  <!-- PHOTO LIST -->
-  <section class="card" id="photosCard" hidden>
-    <div class="row between">
-      <h2>Photos <span class="pill" id="countPill">0</span></h2>
-      <button class="btn btn-ghost small" id="clearBtn">Clear photos</button>
-    </div>
-    <div class="thumbs" id="thumbs"></div>
-  </section>
+    <!-- Pricing Matrix -->
+    <h2 class="section-title" id="pricing">Select Your Ownership Package</h2>
+    <div class="pricing-grid">
+      
+      <!-- Tier 1 -->
+      <div class="price-card">
+        <div>
+          <div class="price-title">APK Source & Code</div>
+          <div class="price-val">$250</div>
+          <ul class="price-features">
+            <li>Complete Kotlin & Compose Source Code</li>
+            <li>Full Room Database Architecture</li>
+            <li>Background Worker & App Blocking Logic</li>
+            <li>Ready-to-build GitHub CI/CD structure</li>
+          </ul>
+        </div>
+        <a href="https://wa.me/923272488207?text=Hi,%20I%20want%20the%20$250%20APK%20Source%20Code%20Package" target="_blank" class="btn btn-outline" style="text-align: center; justify-content: center;">Buy Source Code</a>
+      </div>
 
-  <!-- SETTINGS -->
-  <section class="card">
-    <h2>⚙️ Settings</h2>
-    <div class="grid2">
-      <div class="field">
-        <label>Target size (per image)</label>
-        <div class="input-group">
-          <input type="number" id="targetSize" value="100" min="5" step="5">
-          <select id="unit">
-            <option value="KB" selected>KB</option>
-            <option value="MB">MB</option>
-          </select>
+      <!-- Tier 2 -->
+      <div class="price-card">
+        <div>
+          <div class="price-title">Fully Customized App</div>
+          <div class="price-val">$300</div>
+          <ul class="price-features">
+            <li>Everything in $250 package</li>
+            <li>Custom App Name & Logo Branding</li>
+            <li>Custom Color Scheme & Splash Screen</li>
+            <li>Generated Signed Release APK for Store</li>
+          </ul>
+        </div>
+        <a href="https://wa.me/923272488207?text=Hi,%20I%20want%20the%20$300%20Fully%20Customized%20App" target="_blank" class="btn btn-outline" style="text-align: center; justify-content: center;">Order Customized</a>
+      </div>
+
+      <!-- Tier 3: Featured -->
+      <div class="price-card featured">
+        <span class="badge-featured">Most Profitable</span>
+        <div>
+          <div class="price-title">Fully Customized + Monetization</div>
+          <div class="price-val">$500</div>
+          <ul class="price-features">
+            <li>Full Custom App & Complete Branding</li>
+            <li>Google AdMob Integrated (Banners/Rewarded)</li>
+            <li>Google Play In-App Purchases / Subscriptions</li>
+            <li>Direct Developer Handover & Support</li>
+            <li>Exclusive Complete Ownership Rights</li>
+          </ul>
+        </div>
+        <a href="https://wa.me/923272488207?text=Hi,%20I%20want%20the%20$500%20Monetization%20Ready%20Package" target="_blank" class="btn btn-primary" style="text-align: center; justify-content: center;">Claim Exclusive Rights</a>
+      </div>
+
+    </div>
+
+    <!-- Trust & Verification Section -->
+    <div class="trust-box">
+      <h3 style="font-size: 1.3rem; margin-bottom: 20px; text-align: center;">🛡️ 100% Trust & Verification Guarantee</h3>
+      <div class="trust-grid">
+        <div class="trust-item">
+          <h4>📱 Live Demo APK Provided</h4>
+          <p>Install and test the fully operational build on your own smartphone before making any financial commitment.</p>
+        </div>
+        <div class="trust-item">
+          <h4>🎥 Live Video & Code Inspection</h4>
+          <p>Schedule a real-time screen-share session on Google Meet or WhatsApp to inspect the architecture and source files.</p>
+        </div>
+        <div class="trust-item">
+          <h4>🤝 Direct WhatsApp Line</h4>
+          <p>Continuous direct access with the lead engineer throughout handover, configuration, and build setup.</p>
+        </div>
+        <div class="trust-item">
+          <h4>🔒 Single Buyer Exclusivity</h4>
+          <p>Contractual agreement ensuring the core codebase will never be resold to any competing publisher.</p>
         </div>
       </div>
-      <div class="field">
-        <label>PDF Page layout</label>
-        <select id="pageMode">
-          <option value="a4p">A4 Portrait</option>
-          <option value="a4l">A4 Landscape</option>
-          <option value="auto">Auto (match image size)</option>
-        </select>
+    </div>
+
+    <!-- Contact Box -->
+    <div class="contact-box">
+      <h3>Ready to Launch Your System?</h3>
+      <p style="color: var(--text-sub);">Once this single copy is secured, the listing closes permanently.</p>
+      
+      <div class="contact-meta">
+        <div><strong>WhatsApp / Call:</strong> +92 327 2488207</div>
+        <div><strong>Official Email:</strong> muhammadsalmansharbaloch@gmail.com</div>
       </div>
-    </div>
-    <div class="presets" id="presets">
-      <button class="chip active" data-size="100" data-unit="KB">100 KB</button>
-      <button class="chip" data-size="200" data-unit="KB">200 KB</button>
-      <button class="chip" data-size="500" data-unit="KB">500 KB</button>
-      <button class="chip" data-size="1" data-unit="MB">1 MB</button>
-      <button class="chip" data-size="2" data-unit="MB">2 MB</button>
-    </div>
-  </section>
 
-  <!-- ACTIONS -->
-  <section class="card">
-    <div class="actions">
-      <button class="btn btn-green" id="btnCompress" disabled>🖼️ Compress Images</button>
-      <button class="btn btn-primary" id="btnMake" disabled>📄 Make PDF</button>
+      <a href="https://wa.me/923272488207?text=Hi,%20I%20am%20interested%20in%20Tasker%20Flow%20ownership" target="_blank" class="btn btn-primary">
+        Chat Instantly on WhatsApp 💬
+      </a>
     </div>
 
-    <div class="progress" id="progressWrap" hidden><div class="bar" id="progressBar"></div></div>
-    <div class="status" id="status">Add photos to get started ✨</div>
-  </section>
-
-  <!-- COMPRESSED IMAGES RESULT -->
-  <section class="card" id="resultsCard" hidden>
-    <div class="row between">
-      <h2>✨ Compressed Images</h2>
-      <span class="pill" id="resultCount">0</span>
-    </div>
-    <div class="result-grid" id="resultGrid"></div>
-  </section>
-
-  <!-- PDF RESULT -->
-  <section class="card" id="pdfCard" hidden>
-    <h2>📄 PDF Ready</h2>
-    <div class="pdf-box">
-      <div class="pdf-stats">
-        <div class="stat"><span>Pages</span><b id="pdfPages">–</b></div>
-        <div class="stat"><span>PDF Size</span><b id="pdfSize">–</b></div>
-      </div>
-      <button class="btn btn-pink" id="btnDownloadPdf">⬇️ Download PDF</button>
-    </div>
-  </section>
-
-  <!-- CLEAR ALL OUTPUTS (bottom) -->
-  <section class="card clear-card" id="clearCard" hidden>
-    <div class="txt">
-      <h2>🧹 Clear outputs</h2>
-      <p class="hint">After downloading, you can remove the current output here. Your original photos stay safe.</p>
-    </div>
-    <button class="btn btn-danger" id="btnClearOutputs">Clear All Outputs</button>
-  </section>
-
-</div>
-
-<!-- ================= SAVE SHEET ================= -->
-<div class="sheet-overlay" id="sheetOverlay" aria-hidden="true">
-  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
-    <div class="sheet-grab"></div>
-
-    <div class="row between">
-      <h3 id="sheetTitle">💾 Save file</h3>
-      <button class="sheet-x" id="btnCloseSheet" type="button" aria-label="Close">✕</button>
-    </div>
-
-    <p class="hint">Enter a file name, choose a format, then tap <b>Save</b> — the file will be saved straight to your storage.</p>
-
-    <div class="field" style="margin-top:16px">
-      <label>File name</label>
-      <div class="name-group">
-        <input type="text" id="fileNameInput" spellcheck="false" autocomplete="off" placeholder="my-photos">
-        <select id="extSelect" aria-label="File format">
-          <option value="pdf">.pdf</option>
-          <option value="png">.png</option>
-          <option value="jpg">.jpg</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="sheet-info" id="sheetInfo">–</div>
-
-    <div class="actions sheet-actions">
-      <button class="btn btn-primary" id="btnSaveSheet" type="button">💾 Save to device</button>
-      <button class="btn btn-ghost" id="btnShareSheet" type="button">📤 Share / Open in app</button>
-    </div>
-
-    <div class="status" id="sheetStatus"></div>
   </div>
-</div>
 
-<!-- jsPDF loaded at end so body renders instantly -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script>
-/* ================= Elements ================= */
-const els = {
-  dropzone:    document.getElementById('dropzone'),
-  fileInput:   document.getElementById('fileInput'),
-  photosCard:  document.getElementById('photosCard'),
-  thumbs:      document.getElementById('thumbs'),
-  countPill:   document.getElementById('countPill'),
-  clearBtn:    document.getElementById('clearBtn'),
-  targetSize:  document.getElementById('targetSize'),
-  unit:        document.getElementById('unit'),
-  pageMode:    document.getElementById('pageMode'),
-  presets:     document.getElementById('presets'),
-  btnCompress: document.getElementById('btnCompress'),
-  btnMake:     document.getElementById('btnMake'),
-  progressWrap:document.getElementById('progressWrap'),
-  progressBar: document.getElementById('progressBar'),
-  status:      document.getElementById('status'),
-  resultsCard: document.getElementById('resultsCard'),
-  resultGrid:  document.getElementById('resultGrid'),
-  resultCount: document.getElementById('resultCount'),
-  pdfCard:     document.getElementById('pdfCard'),
-  pdfPages:    document.getElementById('pdfPages'),
-  pdfSize:     document.getElementById('pdfSize'),
-  btnDownloadPdf:document.getElementById('btnDownloadPdf'),
-  clearCard:   document.getElementById('clearCard'),
-  btnClearOutputs:document.getElementById('btnClearOutputs'),
-  themeSwitch: document.getElementById('themeSwitch'),
-};
+  <!-- Attention Grabbing Urgent Popup -->
+  <div class="modal-overlay" id="urgentModal">
+    <div class="modal-box">
+      <button class="close-modal" onclick="closeModal()">&times;</button>
+      <div class="modal-exclusive-tag">⚠️ Strict Urgency: 1 Exclusive License</div>
+      <div class="modal-title">
+        "Launch your own Solo-Leveling Gamified Productivity App! Ready to monetize with Google AdMob & Subscriptions. Live demo APK available"
+      </div>
+      <p class="modal-desc">
+        Warning: This architecture is limited to <strong>only one single purchaser</strong> on a first-come, first-served basis. If you leave this page, the license may be permanently allocated to another investor.
+      </p>
+      <a href="https://wa.me/923272488207?text=Hi,%20I%20want%20to%20reserve%20the%20exclusive%20Tasker%20Flow%20license%20before%20it%20is%20taken" target="_blank" class="btn btn-primary" style="width: 100%; justify-content: center;">
+        Reserve On WhatsApp Before It's Gone 🚀
+      </a>
+    </div>
+  </div>
 
-const state = {
-  photos: [],
-  compressed: [],
-  pdfBlob: null,
-  pdfUrl: null,
-};
+  <!-- Fullscreen Image Lightbox -->
+  <div class="lightbox-overlay" id="lightboxModal" onclick="closeLightbox()">
+    <img id="lightboxImg" src="" alt="App Preview" />
+  </div>
 
-/* ================= Helpers ================= */
-const tick = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-const sleep = ms => new Promise(r => setTimeout(r, ms));
-function fmt(b){
-  if (b == null) return '–';
-  if (b < 1024) return b + ' B';
-  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
-  return (b/1048576).toFixed(2) + ' MB';
-}
-function setStatus(m, t){ els.status.textContent = m; els.status.dataset.type = t || ''; }
-function setProgress(p){
-  if (p == null){ els.progressWrap.hidden = true; els.progressBar.style.width='0%'; return; }
-  els.progressWrap.hidden = false;
-  els.progressBar.style.width = Math.round(Math.min(1,Math.max(0,p))*100) + '%';
-}
-function uid(){
-  return (crypto && crypto.randomUUID) ? crypto.randomUUID()
-       : Math.random().toString(36).slice(2) + Date.now().toString(36);
-}
-function getTargetBytes(){
-  const v = parseFloat(els.targetSize.value);
-  if (!v || v <= 0 || !isFinite(v)) return Infinity;
-  return Math.round(v * (els.unit.value === 'MB' ? 1048576 : 1024));
-}
-function setBusy(busy){
-  const off = !state.photos.length;
-  els.btnCompress.disabled = busy || off;
-  els.btnMake.disabled     = busy || off;
-}
-function updateClearCardVisibility(){
-  const hasOutputs = state.compressed.length > 0 || !!state.pdfBlob;
-  els.clearCard.hidden = !hasOutputs;
-}
-function esc(s){
-  return String(s).replace(/[&<>"']/g, c => (
-    {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
-  ));
-}
-
-/* =========================================================
-   THEME
-========================================================= */
-const mq = window.matchMedia('(prefers-color-scheme: dark)');
-let themePref = localStorage.getItem('p2pdf-theme') || 'system';
-
-function effectiveTheme(pref){
-  if (pref === 'system') return mq.matches ? 'dark' : 'light';
-  return pref;
-}
-function applyTheme(){
-  const eff = effectiveTheme(themePref);
-  document.documentElement.dataset.theme = eff;
-  [...els.themeSwitch.querySelectorAll('button')].forEach(b => {
-    b.classList.toggle('active', b.dataset.themePref === themePref);
-  });
-}
-function setTheme(pref){
-  themePref = pref;
-  localStorage.setItem('p2pdf-theme', pref);
-  applyTheme();
-}
-els.themeSwitch.addEventListener('click', e => {
-  const btn = e.target.closest('button[data-theme-pref]');
-  if (!btn) return;
-  setTheme(btn.dataset.themePref);
-});
-(mq.addEventListener ? mq.addEventListener('change', () => { if (themePref === 'system') applyTheme(); })
-                    : mq.addListener(() => { if (themePref === 'system') applyTheme(); }));
-applyTheme();
-
-/* ================= Add Photos ================= */
-els.dropzone.addEventListener('click', () => els.fileInput.click());
-els.fileInput.addEventListener('change', e => {
-  handleFiles(e.target.files); els.fileInput.value = '';
-});
-['dragenter','dragover'].forEach(ev =>
-  els.dropzone.addEventListener(ev, e => { e.preventDefault(); els.dropzone.classList.add('drag'); })
-);
-['dragleave','drop'].forEach(ev =>
-  els.dropzone.addEventListener(ev, e => { e.preventDefault(); els.dropzone.classList.remove('drag'); })
-);
-els.dropzone.addEventListener('drop', e => {
-  if (e.dataTransfer && e.dataTransfer.files) handleFiles(e.dataTransfer.files);
-});
-
-async function handleFiles(list){
-  const files = [...list].filter(f => f.type.startsWith('image/'));
-  if (!files.length){ setStatus('Please add image files only 🙂', 'err'); return; }
-
-  setStatus('Loading photos...');
-  for (const file of files){
-    try {
-      const url = URL.createObjectURL(file);
-      const img = new Image();
-      img.src = url;
-      await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-      state.photos.push({
-        id: uid(), name: file.name, file, size: file.size, imgUrl: url
-      });
-    } catch(_) {}
-  }
-  resetOutputs();
-  renderThumbs();
-  setStatus(state.photos.length + ' photo(s) ready ✔', 'ok');
-}
-
-function renderThumbs(){
-  els.thumbs.innerHTML = '';
-  state.photos.forEach(p => {
-    const d = document.createElement('div');
-    d.className = 'thumb';
-    const im = document.createElement('img');
-    im.src = p.imgUrl; im.alt = p.name;
-    const rm = document.createElement('button');
-    rm.className = 'rm'; rm.textContent = '×';
-    rm.onclick = ev => { ev.stopPropagation(); removePhoto(p.id); };
-    const meta = document.createElement('span');
-    meta.className = 'tmeta'; meta.textContent = fmt(p.size);
-    d.append(im, rm, meta);
-    els.thumbs.appendChild(d);
-  });
-  els.photosCard.hidden = state.photos.length === 0;
-  els.countPill.textContent = state.photos.length;
-  setBusy(false);
-}
-
-function removePhoto(id){
-  const i = state.photos.findIndex(p => p.id === id);
-  if (i > -1){ URL.revokeObjectURL(state.photos[i].imgUrl); state.photos.splice(i,1); }
-  resetOutputs(); renderThumbs();
-  setStatus(state.photos.length ? state.photos.length + ' photo(s) remaining.' : 'Add photos to get started ✨');
-}
-
-els.clearBtn.addEventListener('click', () => {
-  state.photos.forEach(p => URL.revokeObjectURL(p.imgUrl));
-  state.photos = [];
-  resetOutputs(); renderThumbs();
-  setStatus('All photos removed. Add photos to get started ✨');
-});
-
-function clearImageOutputs(){
-  state.compressed.forEach(c => c.url && URL.revokeObjectURL(c.url));
-  state.compressed = [];
-  els.resultGrid.innerHTML = '';
-  els.resultsCard.hidden = true;
-  els.resultCount.textContent = '0';
-}
-function clearPdfOutput(){
-  if (state.pdfUrl) URL.revokeObjectURL(state.pdfUrl);
-  state.pdfBlob = null;
-  state.pdfUrl  = null;
-  els.pdfCard.hidden = true;
-}
-function resetOutputs(){
-  clearImageOutputs();
-  clearPdfOutput();
-  setProgress(null);
-  setBusy(false);
-  updateClearCardVisibility();
-  closeSheet();
-}
-
-els.btnClearOutputs.addEventListener('click', () => {
-  resetOutputs();
-  setStatus('🧹 Outputs cleared. Your photos are safe.', 'ok');
-});
-
-els.presets.addEventListener('click', e => {
-  const chip = e.target.closest('.chip');
-  if (!chip) return;
-  els.targetSize.value = chip.dataset.size;
-  els.unit.value = chip.dataset.unit;
-  [...els.presets.children].forEach(c => c.classList.remove('active'));
-  chip.classList.add('active');
-  resetOutputs();
-});
-els.targetSize.addEventListener('input', () => {
-  [...els.presets.children].forEach(c => c.classList.remove('active'));
-  resetOutputs();
-});
-els.unit.addEventListener('change', () => {
-  [...els.presets.children].forEach(c => c.classList.remove('active'));
-  resetOutputs();
-});
-
-/* =========================================================
-   CORE COMPRESSION
-========================================================= */
-async function compressToTarget(file, maxBytes){
-  const img = await createImageBitmap(file);
-  const canvas = document.createElement('canvas');
-  const ctx = canvas.getContext('2d');
-
-  let width = img.width;
-  let height = img.height;
-  canvas.width = width;
-  canvas.height = height;
-  ctx.drawImage(img, 0, 0, width, height);
-
-  if (file.size <= maxBytes){
-    return { blob: file, w: width, h: height };
-  }
-
-  let minQuality = 0.05;
-  let maxQuality = 0.98;
-  let bestBlob = null;
-
-  for (let i = 0; i < 6; i++){
-    const midQ = (minQuality + maxQuality) / 2;
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', midQ));
-    if (blob.size <= maxBytes){
-      bestBlob = blob;
-      minQuality = midQ;
-    } else {
-      maxQuality = midQ;
-    }
-  }
-
-  while (!bestBlob || bestBlob.size > maxBytes){
-    width  = Math.floor(width  * 0.85);
-    height = Math.floor(height * 0.85);
-    if (width < 100 || height < 100) break;
-
-    canvas.width = width;
-    canvas.height = height;
-    ctx.drawImage(img, 0, 0, width, height);
-
-    const blob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.85));
-    if (blob.size <= maxBytes){ bestBlob = blob; break; }
-  }
-
-  if (!bestBlob){
-    bestBlob = await new Promise(r => canvas.toBlob(r, 'image/jpeg', 0.6));
-  }
-  return { blob: bestBlob, w: width, h: height };
-}
-
-async function compressAll(){
-  if (!state.photos.length){ setStatus('Please add photos first 🙂', 'err'); return; }
-
-  const target = getTargetBytes();
-  setBusy(true);
-  setStatus('Compressing... Please wait up to 1 minute for best results. Do not close the app.', '');
-  setProgress(0);
-
-  clearImageOutputs();
-  clearPdfOutput();
-  updateClearCardVisibility();
-  closeSheet();
-
-  const t0 = performance.now();
-
-  for (let i = 0; i < state.photos.length; i++){
-    const p = state.photos[i];
-    const { blob, w, h } = await compressToTarget(p.file, target);
-    const url = URL.createObjectURL(blob);
-    state.compressed.push({
-      id: p.id, name: p.name, blob, url,
-      size: blob.size, originalSize: p.size, w, h
+  <script>
+    // Show urgent popup automatically after 2.5 seconds
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        openModal();
+      }, 2500);
     });
-    setProgress((i + 1) / state.photos.length);
-    await tick();
-  }
 
-  const ms = Math.round(performance.now() - t0);
-
-  renderResults();
-  setProgress(null);
-  setBusy(false);
-  updateClearCardVisibility();
-
-  const totalOrig = state.photos.reduce((a, p) => a + p.size, 0);
-  const totalComp = state.compressed.reduce((a, c) => a + c.size, 0);
-  const targetTxt = isFinite(target) ? fmt(target) : 'unlimited';
-  setStatus(
-    `✔ Compression done (${ms} ms) — Target: ${targetTxt} · ${fmt(totalOrig)} → ${fmt(totalComp)}`,
-    'ok'
-  );
-}
-
-els.btnCompress.addEventListener('click', compressAll);
-
-function renderResults(){
-  els.resultGrid.innerHTML = '';
-  state.compressed.forEach(c => {
-    const item = document.createElement('div');
-    item.className = 'r-item';
-
-    const im = document.createElement('img');
-    im.src = c.url; im.alt = c.name; im.loading = 'lazy';
-
-    const body = document.createElement('div');
-    body.className = 'r-body';
-
-    const nm = document.createElement('div');
-    nm.className = 'r-name'; nm.title = c.name;
-    nm.textContent = c.name;
-
-    const sz = document.createElement('div');
-    sz.className = 'r-size';
-    sz.innerHTML = `${fmt(c.originalSize)} → <b>${fmt(c.size)}</b>`;
-
-    const dl = document.createElement('button');
-    dl.className = 'r-dl';
-    dl.type = 'button';
-    dl.onclick = () => openSheet();
-    dl.innerHTML = 'Download';
-
-    body.append(nm, sz, dl);
-    item.append(im, body);
-    els.resultGrid.appendChild(item);
-  });
-  els.resultCount.textContent = state.compressed.length;
-  els.resultsCard.hidden = state.compressed.length === 0;
-}
-
-async function makePDF(){
-  if (!state.photos.length){ setStatus('Please add photos first 🙂', 'err'); return; }
-
-  setBusy(true);
-  setStatus('Creating PDF... Please wait up to 1 minute for best results. Do not close the app.', '');
-  setProgress(0);
-  await tick();
-
-  clearImageOutputs();
-  clearPdfOutput();
-  updateClearCardVisibility();
-  closeSheet();
-
-  const target = getTargetBytes();
-  const mode   = els.pageMode.value;
-  const margin = 16;
-  let pdf = null;
-  let pageCount = 0;
-
-  try {
-    for (let i = 0; i < state.photos.length; i++){
-      const p = state.photos[i];
-      const { blob, w, h } = await compressToTarget(p.file, target);
-      const dataUrl = await blobToDataURL(blob);
-
-      if (mode === 'auto'){
-        const k = Math.min(1, 842 / Math.max(w, h));
-        const pw = w * k, ph = h * k;
-        const orient = pw > ph ? 'l' : 'p';
-        if (!pdf) pdf = new jspdf.jsPDF({ unit:'pt', format:[pw, ph], orientation: orient, compress:true });
-        else pdf.addPage([pw, ph], orient);
-        pdf.addImage(dataUrl, 'JPEG', 0, 0, pw, ph, undefined, 'FAST');
-      } else {
-        const orient = mode === 'a4l' ? 'l' : 'p';
-        if (!pdf) pdf = new jspdf.jsPDF({ unit:'pt', format:'a4', orientation: orient, compress:true });
-        else pdf.addPage('a4', orient);
-
-        const pw = pdf.internal.pageSize.getWidth();
-        const ph = pdf.internal.pageSize.getHeight();
-        const aw = pw - margin * 2, ah = ph - margin * 2;
-        const r  = Math.min(aw / w, ah / h);
-        const iw = w * r, ih = h * r;
-        pdf.addImage(dataUrl, 'JPEG', (pw - iw) / 2, (ph - ih) / 2, iw, ih, undefined, 'FAST');
-      }
-
-      pageCount++;
-      setProgress((i + 1) / state.photos.length);
-      await tick();
+    function openModal() {
+      document.getElementById('urgentModal').style.display = 'flex';
     }
 
-    const blob = pdf.output('blob');
-    state.pdfBlob = blob;
-    state.pdfUrl  = URL.createObjectURL(blob);
+    function closeModal() {
+      document.getElementById('urgentModal').style.display = 'none';
+    }
 
-    els.pdfPages.textContent = pageCount;
-    els.pdfSize.textContent  = fmt(blob.size);
-    els.pdfCard.hidden = false;
+    // Lightbox viewer logic
+    function openLightbox(src) {
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightboxModal').style.display = 'flex';
+    }
 
-    setProgress(null);
-    setBusy(false);
-    updateClearCardVisibility();
-    setStatus(`✔ PDF ready! ${pageCount} page(s) · ${fmt(blob.size)}`, 'ok');
-    els.pdfCard.scrollIntoView({ behavior:'smooth', block:'nearest' });
-  } catch(err){
-    console.error(err);
-    setProgress(null);
-    setBusy(false);
-    setStatus('Error creating PDF: ' + err.message, 'err');
-  }
-}
+    function closeLightbox() {
+      document.getElementById('lightboxModal').style.display = 'none';
+    }
 
-function blobToDataURL(blob){
-  return new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => res(fr.result);
-    fr.onerror = rej;
-    fr.readAsDataURL(blob);
-  });
-}
-
-els.btnMake.addEventListener('click', makePDF);
-
-/* =========================================================
-   SAVE SHEET
-========================================================= */
-const sheet = {
-  overlay:  document.getElementById('sheetOverlay'),
-  name:     document.getElementById('fileNameInput'),
-  ext:      document.getElementById('extSelect'),
-  info:     document.getElementById('sheetInfo'),
-  status:   document.getElementById('sheetStatus'),
-  btnSave:  document.getElementById('btnSaveSheet'),
-  btnShare: document.getElementById('btnShareSheet'),
-  btnClose: document.getElementById('btnCloseSheet'),
-};
-
-let nameTouched = false;
-
-function pad2(n){ return String(n).padStart(2,'0'); }
-function defaultBaseName(){
-  const d = new Date();
-  return `photos-${d.getFullYear()}${pad2(d.getMonth()+1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}`;
-}
-function sanitizeBase(s){
-  return String(s || '')
-    .replace(/\.(pdf|png|jpe?g)$/i, '')
-    .replace(/[\\/:*?"<>|\u0000-\u001f]/g, '')
-    .trim()
-    .slice(0, 80);
-}
-function currentBase(){
-  return sanitizeBase(sheet.name.value) || defaultBaseName();
-}
-function setSheetStatus(msg, type){
-  sheet.status.textContent = msg || '';
-  sheet.status.dataset.type = type || '';
-}
-
-function updateSheetInfo(){
-  const ext = sheet.ext.value;
-
-  if (ext === 'pdf'){
-    const n    = state.pdfBlob ? state.photos.length : 0;
-    const size = state.pdfBlob ? fmt(state.pdfBlob.size) : '–';
-    sheet.info.innerHTML = `Format: <b>PDF document</b> · ${n} page(s) · ${esc(size)}`;
-    return;
-  }
-
-  const count = state.compressed.length || state.photos.length;
-  const total = state.compressed.length
-    ? state.compressed.reduce((a, c) => a + c.size, 0)
-    : state.photos.reduce((a, p) => a + p.size, 0);
-
-  if (count > 1){
-    sheet.info.innerHTML =
-      `Format: <b>${esc(ext.toUpperCase())} images</b> · ${count} separate files ` +
-      `(${esc(currentBase())}-1.${esc(ext)}, -2.${esc(ext)} …) · ~${esc(fmt(total))}`;
-  } else {
-    sheet.info.innerHTML =
-      `Format: <b>${esc(ext.toUpperCase())} image</b> · 1 file · ~${esc(fmt(total))}`;
-  }
-}
-
-function openSheet(){
-  if (!state.pdfBlob && state.compressed.length > 0){
-    sheet.ext.value = 'jpg';
-  }
-  if (!state.pdfBlob && !state.compressed.length && !state.photos.length){
-    setStatus('Please add photos first 🙂', 'err');
-    return;
-  }
-  if (!nameTouched || !sheet.name.value.trim()){
-    sheet.name.value = defaultBaseName();
-  }
-  setSheetStatus('');
-  updateSheetInfo();
-  sheet.overlay.classList.add('open');
-  sheet.overlay.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  setTimeout(() => {
-    try { sheet.name.focus(); sheet.name.select(); } catch(_) {}
-  }, 340);
-}
-
-function closeSheet(){
-  if (!sheet.overlay.classList.contains('open')) return;
-  sheet.overlay.classList.remove('open');
-  sheet.overlay.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-}
-
-sheet.btnClose.addEventListener('click', closeSheet);
-sheet.overlay.addEventListener('click', e => { if (e.target === sheet.overlay) closeSheet(); });
-document.addEventListener('keydown', e => {
-  if (e.key === 'Escape' && sheet.overlay.classList.contains('open')) closeSheet();
-});
-sheet.name.addEventListener('input', () => { nameTouched = true; updateSheetInfo(); });
-sheet.ext.addEventListener('change', () => { setSheetStatus(''); updateSheetInfo(); });
-
-function convertImageBlob(blob, ext){
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(blob);
-    const img = new Image();
-    img.onload = () => {
-      try{
-        const cv = document.createElement('canvas');
-        cv.width  = img.naturalWidth  || img.width;
-        cv.height = img.naturalHeight || img.height;
-        const ctx = cv.getContext('2d');
-        if (ext === 'jpg'){
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(0, 0, cv.width, cv.height);
-        }
-        ctx.drawImage(img, 0, 0);
-        cv.toBlob(b => {
-          URL.revokeObjectURL(url);
-          b ? resolve(b) : reject(new Error('conversion failed'));
-        }, ext === 'png' ? 'image/png' : 'image/jpeg', 0.95);
-      }catch(err){ URL.revokeObjectURL(url); reject(err); }
+    // Close modals on outside click
+    window.onclick = function(e) {
+      const urgentModal = document.getElementById('urgentModal');
+      if (e.target === urgentModal) {
+        closeModal();
+      }
     };
-    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('image load failed')); };
-    img.src = url;
-  });
-}
-
-async function buildOutputFiles(){
-  const ext  = sheet.ext.value;
-  const base = currentBase();
-
-  if (ext === 'pdf'){
-    if (!state.pdfBlob) throw new Error('PDF is not ready — tap "Make PDF" first.');
-    return [{ blob: state.pdfBlob, name: base + '.pdf', mime: 'application/pdf' }];
-  }
-
-  let source = state.compressed;
-  if (!source.length){
-    if (!state.photos.length) throw new Error('No photos found — add photos first.');
-    const target = getTargetBytes();
-    source = [];
-    for (const p of state.photos){
-      const { blob, w, h } = await compressToTarget(p.file, target);
-      source.push({ blob, w, h, name: p.name });
-    }
-  }
-
-  const mime  = ext === 'png' ? 'image/png' : 'image/jpeg';
-  const multi = source.length > 1;
-  const out = [];
-
-  for (let i = 0; i < source.length; i++){
-    const c = source[i];
-    const b = await convertImageBlob(c.blob, ext);
-    out.push({
-      blob: b,
-      name: multi ? `${base}-${i + 1}.${ext}` : `${base}.${ext}`,
-      mime
-    });
-  }
-  return out;
-}
-
-async function downloadBlob(blob, filename){
-  if (window.Android && typeof window.Android.saveFile === "function"){
-    try{
-      const dataUrl = await blobToDataURL(blob);
-      const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-      const mime = blob.type || "application/octet-stream";
-      const res = window.Android.saveFile(filename, mime, b64);
-      if (res && res.indexOf("ok") === 0) return;
-    }catch(e){}
-  }
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.rel = 'noopener';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 20000);
-}
-
-async function saveFileToDevice(file, allowPicker){
-  if (window.Android && typeof window.Android.saveFile === "function"){
-    try{
-      const dataUrl = await blobToDataURL(file.blob);
-      const b64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
-      const mime = file.mime || file.blob.type || "application/octet-stream";
-      const res = window.Android.saveFile(file.name, mime, b64);
-      if (res && res.indexOf("ok") === 0) return "saved";
-      return "error:" + res;
-    }catch(e){ return "error:" + e.message; }
-  }
-  downloadBlob(file.blob, file.name);
-  return "downloaded";
-}
-
-sheet.btnSave.addEventListener('click', async () => {
-  if (!state.pdfBlob && !state.compressed.length && !state.photos.length){
-    setSheetStatus('Nothing to save.', 'err');
-    return;
-  }
-
-  sheet.btnSave.disabled = true;
-  sheet.btnShare.disabled = true;
-  setSheetStatus('Preparing file...');
-
-  try{
-    const files = await buildOutputFiles();
-
-    if (files.length === 1){
-      const res = await saveFileToDevice(files[0], true);
-      if (res === 'cancelled'){
-        setSheetStatus('Save cancelled.', '');
-      } else {
-        setSheetStatus('✔ "' + files[0].name + '" saved — check Storage / Downloads 📁', 'ok');
-      }
-    } else {
-      for (let i = 0; i < files.length; i++){
-        await saveFileToDevice(files[i], false);
-        setSheetStatus(`Saving ${i + 1}/${files.length}...`);
-        await sleep(450);
-      }
-      setSheetStatus(`✔ ${files.length} files saved (${files[0].name} …) 📁`, 'ok');
-    }
-  }catch(err){
-    console.error(err);
-    setSheetStatus('Save error: ' + (err && err.message ? err.message : err), 'err');
-  }finally{
-    sheet.btnSave.disabled = false;
-    sheet.btnShare.disabled = false;
-  }
-});
-
-sheet.btnShare.addEventListener('click', async () => {
-  sheet.btnShare.disabled = true;
-  sheet.btnSave.disabled = true;
-  setSheetStatus('Preparing file...');
-  try{
-    const files = await buildOutputFiles();
-    if (window.Android && typeof window.Android.shareFile === 'function'){
-      const f = files[0];
-      const dataUrl = await blobToDataURL(f.blob);
-      const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1);
-      const mime = f.mime || f.blob.type || 'application/octet-stream';
-      const res = window.Android.shareFile(f.name, mime, b64);
-      if (res && res.indexOf('ok') === 0){
-        setSheetStatus('✔ Share sheet opened', 'ok');
-      } else {
-        setSheetStatus('Share failed: ' + res, 'err');
-      }
-    } else {
-      setSheetStatus('Sharing not available.', 'err');
-    }
-  }catch(err){
-    console.error(err);
-    setSheetStatus('Share error: ' + (err && err.message ? err.message : err), 'err');
-  }finally{
-    sheet.btnShare.disabled = false;
-    sheet.btnSave.disabled = false;
-  }
-});
-
-els.btnDownloadPdf.addEventListener('click', openSheet);
-
-renderThumbs();
-setBusy(false);
-updateClearCardVisibility();
-</script>
+  </script>
 </body>
 </html>
