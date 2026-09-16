@@ -414,6 +414,46 @@
         <div class="screen-label">Screen 7</div>
       </div>
 
+    <!-- Trust & Verification Section -->
+    <div class="trust-box">
+      <h3 style="font-size: 1.3rem; margin-bottom: 20px; text-align: center;">🛡️ 100% Trust & Verification Guarantee</h3>
+      <div class="trust-grid">
+        <div class="trust-item">
+          <h4>📱 Live Demo APK Provided</h4>
+          <p>Install and test the fully operational build on your own smartphone before making any financial commitment.</p>
+        </div>
+        <div class="trust-item">
+          <h4>🎥 Live Video & Code Inspection</h4>
+          <p>Schedule a real-time screen-share session on Google Meet or WhatsApp to inspect the architecture and source files.</p>
+        </div>
+        <div class="trust-item">
+          <h4>🤝 Direct WhatsApp Line</h4>
+          <p>Continuous direct access with the lead engineer throughout handover, configuration, and build setup.</p>
+        </div>
+        <div class="trust-item">
+          <h4>🔒 Single Buyer Exclusivity</h4>
+          <p>Contractual agreement ensuring the core codebase will never be resold to any competing publisher.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Box -->
+    <div class="contact-box">
+      <h3>Ready to Launch Your System?</h3>
+      <p style="color: var(--text-sub);">Once this single copy is secured, the listing closes permanently.</p>
+      
+      <div class="contact-meta">
+        <div><strong>WhatsApp / Call:</strong> +92 327 2488207</div>
+        <div><strong>Official Email:</strong> muhammadsalmansharbaloch@gmail.com</div>
+      </div>
+
+      <a href="https://wa.me/923272488207?text=Hi,%20I%20am%20interested%20in%20Tasker%20Flow%20ownership" target="_blank" class="btn btn-primary">
+        Chat Instantly on WhatsApp 💬
+      </a>
+    </div>
+
+  </div>
+
     <!-- Pricing Matrix -->
     <h2 class="section-title" id="pricing">Select Your Ownership Package</h2>
     <div class="pricing-grid">
@@ -467,46 +507,6 @@
 
     </div>
 
-    <!-- Trust & Verification Section -->
-    <div class="trust-box">
-      <h3 style="font-size: 1.3rem; margin-bottom: 20px; text-align: center;">🛡️ 100% Trust & Verification Guarantee</h3>
-      <div class="trust-grid">
-        <div class="trust-item">
-          <h4>📱 Live Demo APK Provided</h4>
-          <p>Install and test the fully operational build on your own smartphone before making any financial commitment.</p>
-        </div>
-        <div class="trust-item">
-          <h4>🎥 Live Video & Code Inspection</h4>
-          <p>Schedule a real-time screen-share session on Google Meet or WhatsApp to inspect the architecture and source files.</p>
-        </div>
-        <div class="trust-item">
-          <h4>🤝 Direct WhatsApp Line</h4>
-          <p>Continuous direct access with the lead engineer throughout handover, configuration, and build setup.</p>
-        </div>
-        <div class="trust-item">
-          <h4>🔒 Single Buyer Exclusivity</h4>
-          <p>Contractual agreement ensuring the core codebase will never be resold to any competing publisher.</p>
-        </div>
-      </div>
-    </div>
-
-    <!-- Contact Box -->
-    <div class="contact-box">
-      <h3>Ready to Launch Your System?</h3>
-      <p style="color: var(--text-sub);">Once this single copy is secured, the listing closes permanently.</p>
-      
-      <div class="contact-meta">
-        <div><strong>WhatsApp / Call:</strong> +92 327 2488207</div>
-        <div><strong>Official Email:</strong> muhammadsalmansharbaloch@gmail.com</div>
-      </div>
-
-      <a href="https://wa.me/923272488207?text=Hi,%20I%20am%20interested%20in%20Tasker%20Flow%20ownership" target="_blank" class="btn btn-primary">
-        Chat Instantly on WhatsApp 💬
-      </a>
-    </div>
-
-  </div>
-
   <!-- Attention Grabbing Urgent Popup -->
   <div class="modal-overlay" id="urgentModal">
     <div class="modal-box">
@@ -537,24 +537,40 @@
       }, 2500);
     });
 
+    function pushModalState() {
+      try { history.pushState({ modal: true }, ''); } catch(e){}
+    }
+
     function openModal() {
       document.getElementById('urgentModal').style.display = 'flex';
+      pushModalState();
     }
 
     function closeModal() {
       document.getElementById('urgentModal').style.display = 'none';
+      if (history.state && history.state.modal) { try { history.back(); } catch(e){} }
     }
 
-    // Lightbox viewer logic
+    window.addEventListener('popstate', function() {
+      const lb = document.getElementById('lightboxModal');
+      const md = document.getElementById('urgentModal');
+      if (lb && lb.style.display === 'flex') {
+        lb.style.display = 'none';
+      } else if (md && md.style.display === 'flex') {
+        md.style.display = 'none';
+      }
+    });
+
     function openLightbox(src) {
       document.getElementById('lightboxImg').src = src;
       document.getElementById('lightboxModal').style.display = 'flex';
+      pushModalState();
     }
 
     function closeLightbox() {
       document.getElementById('lightboxModal').style.display = 'none';
+      if (history.state && history.state.modal) { try { history.back(); } catch(e){} }
     }
-
     // Close modals on outside click
     window.onclick = function(e) {
       const urgentModal = document.getElementById('urgentModal');
